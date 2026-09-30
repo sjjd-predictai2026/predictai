@@ -1,0 +1,9 @@
+{
+  "name": "PredictAI للصيانة",
+  "short_name": "PredictAI",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f3f5f7",
+  "theme_color": "#1769e0",
+  "description": "تطبيق PredictAI للتنبؤ بالحاجة إلى الصيانة باستخدام Random Forest"
+}
