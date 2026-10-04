@@ -1,4 +1,4 @@
-const CACHE_NAME = "predictai-v1";
+const CACHE_NAME = "predictai-v2";
 const ASSETS = [
   "./",
   "./index.html",

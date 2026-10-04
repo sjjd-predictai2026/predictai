@@ -523,58 +523,8 @@ body{
 }
 </style>
 
-
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0b2b4a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PredictAI">
-<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<style id="predictai-launch-design">
-#predictai-splash{
-  position:fixed;inset:0;z-index:99999;
-  display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(145deg,#071d33,#0b3f69 58%,#08b7d8);
-  transition:opacity .35s ease,visibility .35s ease;
-}
-#predictai-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-#predictai-splash .splash-card{
-  width:min(88vw,390px);text-align:center;color:#fff;
-  padding:30px 24px 28px;border-radius:30px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 25px 70px rgba(0,0,0,.28);
-  backdrop-filter:blur(12px);
-}
-#predictai-splash img{
-  width:145px;height:145px;border-radius:30px;
-  display:block;margin:0 auto 18px;
-  box-shadow:0 12px 32px rgba(0,0,0,.28);
-}
-#predictai-splash h2{margin:0;font-size:27px;letter-spacing:.2px}
-#predictai-splash p{margin:8px 0 0;color:#d7eef9;font-size:13px}
-#predictai-splash .loader{
-  width:46px;height:4px;border-radius:9px;margin:20px auto 0;
-  background:linear-gradient(90deg,#20e4f0,#fff,#20e4f0);
-  animation:paLoad 1.1s infinite ease-in-out;
-}
-@keyframes paLoad{0%,100%{transform:scaleX(.55);opacity:.55}50%{transform:scaleX(1);opacity:1}}
-</style>
-
 </head>
 <body>
-
-<div id="predictai-splash" aria-hidden="true">
-  <div class="splash-card">
-    <img src="icon-192.png" alt="PredictAI">
-    <h2>PredictAI</h2>
-    <p>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</p>
-    <div class="loader"></div>
-  </div>
-</div>
-
 <header class="top"><h1>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
 
 <div class="container">
@@ -850,6 +800,10 @@ function addWheelFromForm(){
  document.getElementById('newDriverName').value='';
  document.getElementById('newDriverBehavior').value='متوسط';
  document.getElementById('newWheelKm').value='0';
+ renderPicker();
+ const picker=document.getElementById('wheelSelect');
+ if(picker) picker.value=id;
+ previewWheel();
  alert('تمت إضافة العجلة بنجاح');
 }
 
@@ -1454,20 +1408,4 @@ function openDemoTest(){
 
 renderPicker();
 </script>
-
-<script>
-(function(){
-  function hideSplash(){
-    var el=document.getElementById('predictai-splash');
-    if(el) setTimeout(function(){el.classList.add('hide');},650);
-  }
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('service-worker.js').catch(function(){});
-    });
-  }
-  hideSplash();
-})();
-</script>
-
 </body></html>
