@@ -1,23 +1,24 @@
 {
-  "name": "PredictAI - صيانة العجلات",
+  "name": "نموذج ذكاء اصطناعي للتنبؤ بصيانة العجلات",
   "short_name": "PredictAI",
-  "description": "نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات ودعم قرار الصيانة",
+  "description": "نظام محلي لإدارة بيانات العجلات وتحليل الصيانة التنبؤية",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#071d33",
-  "theme_color": "#0b2b4a",
+  "orientation": "portrait-primary",
+  "background_color": "#eef2f5",
+  "theme_color": "#14283a",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

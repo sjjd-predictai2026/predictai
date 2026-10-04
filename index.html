@@ -523,6 +523,14 @@ body{
 }
 </style>
 
+<meta name="theme-color" content="#14283a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PredictAI">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body>
 <header class="top"><h1>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
@@ -731,22 +739,26 @@ function renderWheel(){
  const ew=document.getElementById('earlyFaultWarning');
  if(ew) ew.innerHTML=earlyFaultHTML(w,ls);
 
+ const faultRows=ls.filter(x=>x.fault);
+ const faultParts=[...new Set(faultRows.map(x=>String(x.part||'').trim()).filter(Boolean))];
+ const maintRows=ls;
+ const maintParts=[...new Set(maintRows.map(x=>String(x.part||'').trim()).filter(Boolean))];
  document.getElementById('faults').innerHTML=`
  <div class="box"><h2>سجل أعطال ${esc(w.name)}</h2>
- ${ls.filter(x=>x.fault).length?`<div class="table-wrap"><table><tr><th>التاريخ</th><th>الكيلومترات</th><th>الجزء</th><th>العطل</th><th>الشدة</th><th>الإجراء</th></tr>
- ${ls.filter(x=>x.fault).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.km)}</td><td>${esc(x.part)}</td><td>${esc(x.fault)}</td><td>${esc(x.severity)}</td><td>${esc(x.action)}</td></tr>`).join('')}</table></div>`:''}</div>`;
+ <div class="grid" style="margin-bottom:14px"><div><label>اختر الجزء العاطل</label><select id="faultPartFilter" onchange="renderFaultHistory()"><option value="">كل الأجزاء</option>${faultParts.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div></div>
+ <div id="faultHistoryTable"></div></div>`;
 
  document.getElementById('maintenance').innerHTML=`
- <div class="box"><h2>سجل الصيانة</h2>
- ${ls.length?`<div class="table-wrap"><table><tr><th>التاريخ</th><th>الجزء</th><th>الإجراء</th><th>التكلفة</th><th>النتيجة</th><th>المتابعة</th></tr>
- ${ls.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.part)}</td><td>${esc(x.action)}</td><td>${esc(x.cost||'-')}</td><td>${esc(x.result)}</td><td>${x.outcome==='pending'?`<button class=\"btn light\" onclick=\"setOutcome('${x.id}')\">تحديث</button>`:'مكتمل'}</td></tr>`).join('')}</table></div>`:''}</div>`;
+ <div class="box"><h2>سجل الصيانة ${esc(w.name)}</h2>
+ <div class="grid" style="margin-bottom:14px"><div><label>اختر الجزء</label><select id="maintenancePartFilter" onchange="renderMaintenanceHistory()"><option value="">كل الأجزاء</option>${maintParts.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div></div>
+ <div id="maintenanceHistoryTable"></div></div>`;
 
  document.getElementById('parts').innerHTML=`
- <div class="box"><h2>أجزاء ${esc(w.name)}</h2>
- <div class="parts">${ps.length?ps.map(p=>`<div class="part" onclick="openPart('${p.id}')">
- <h3>${esc(p.name)}</h3>
- <p>عدد الأعطال: <b>${esc(p.failures)}</b></p><p>الحالة: ${esc(p.status)}</p>
- </div>`).join(''):''}</div></div>`;
+ <div class="box"><h2>الأجزاء العاطلة</h2>
+ ${(()=>{const m={};faultRows.forEach(x=>{const k=String(x.part||'').trim();if(k)m[k]=(m[k]||0)+1});const top=Object.entries(m).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));return top.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>الجزء العاطل</th><th>عدد المرات</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x[0])}</b></td><td>${x[1]}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أجزاء عاطلة مسجلة بعد.</div>'})()}
+ </div>`;
+ renderFaultHistory();
+ renderMaintenanceHistory();
 
  document.getElementById('addRecord').innerHTML=`
  <div class="box"><h2>تسجيل عطل أو صيانة</h2>
@@ -974,6 +986,20 @@ function renderLearningPanel(){
  <p>تقييم الإصلاح: ${metricsText(er)}.</p>
  <p>تقييم الاستبدال: ${metricsText(es)}.</p>
  <div class="notice">كل سجل جديد بنتيجة فعلية يدخل قاعدة التعلم تلقائياً. النموذج لا يدّعي دقة علمية قبل توفر بيانات حقيقية كافية.</div></div>`;
+}
+
+function renderFaultHistory(){
+ const box=document.getElementById('faultHistoryTable'); if(!box)return;
+ const filter=document.getElementById('faultPartFilter')?.value||'';
+ const rows=logs().filter(x=>x.fault&&(!filter||String(x.part||'')===filter)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.action||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
+}
+
+function renderMaintenanceHistory(){
+ const box=document.getElementById('maintenanceHistoryTable'); if(!box)return;
+ const filter=document.getElementById('maintenancePartFilter')?.value||'';
+ const rows=logs().filter(x=>(!filter||String(x.part||'')===filter)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>الإجراء</th><th>النتيجة</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
 }
 
 function renderMostFailedPartsSection(){
@@ -1407,5 +1433,14 @@ function openDemoTest(){
 }
 
 renderPicker();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js', {scope: './'})
+      .catch(function (err) { console.warn('Service Worker registration failed:', err); });
+  });
+}
 </script>
 </body></html>
