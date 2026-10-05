@@ -523,14 +523,6 @@ body{
 }
 </style>
 
-<meta name="theme-color" content="#14283a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PredictAI">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body>
 <header class="top"><h1>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
@@ -991,14 +983,14 @@ function renderLearningPanel(){
 function renderFaultHistory(){
  const box=document.getElementById('faultHistoryTable'); if(!box)return;
  const filter=document.getElementById('faultPartFilter')?.value||'';
- const rows=logs().filter(x=>x.fault&&(!filter||String(x.part||'')===filter)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const rows=logs().filter(x=>x.fault&&(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
  box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.action||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
 }
 
 function renderMaintenanceHistory(){
  const box=document.getElementById('maintenanceHistoryTable'); if(!box)return;
  const filter=document.getElementById('maintenancePartFilter')?.value||'';
- const rows=logs().filter(x=>(!filter||String(x.part||'')===filter)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const rows=logs().filter(x=>(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
  box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>الإجراء</th><th>النتيجة</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
 }
 
@@ -1356,6 +1348,23 @@ function runAI(){
  document.getElementById('aiResult').innerHTML=msg;
 }
 
+function showDemoModal(){
+ const old=document.getElementById('demoModal');
+ if(old)old.remove();
+ const m=document.createElement('div');
+ m.id='demoModal';
+ m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
+ m.innerHTML=`<div style="width:min(460px,100%);background:linear-gradient(135deg,#eaf5ff,#d7ecff);border:1px solid #b9d8f2;border-radius:22px;padding:28px 24px;box-shadow:0 18px 55px rgba(0,0,0,.22);text-align:center;">
+   <div style="font-weight:800;font-size:18px;line-height:1.9;color:#163b57;">
+     تم تحميل الاختبار التجريبي بـ50 حالة اصطناعية لعجلة افتراضية.<br>
+     البيانات منفصلة ولا تُحفظ ضمن بيانات العجلات الأصلية.
+   </div>
+   <button onclick="document.getElementById('demoModal')?.remove()" style="margin-top:22px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:11px 34px;font-size:16px;font-weight:800;cursor:pointer;">حسناً</button>
+ </div>`;
+ document.body.appendChild(m);
+ m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+}
+
 function openDemoTest(){
  if(demoMode){
   selected='VIRTUAL-DEMO';
@@ -1429,18 +1438,9 @@ function openDemoTest(){
  });
  selected=n.id;
  openWheel(n.id);
- alert('تم تحميل الاختبار التجريبي بـ50 حالة اصطناعية لعجلة افتراضية. البيانات منفصلة ولا تُحفظ ضمن بيانات العجلات الأصلية.');
+ showDemoModal();
 }
 
 renderPicker();
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./service-worker.js', {scope: './'})
-      .catch(function (err) { console.warn('Service Worker registration failed:', err); });
-  });
-}
 </script>
 </body></html>
