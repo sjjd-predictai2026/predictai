@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</title>
+<link rel="manifest" href="manifest.webmanifest">
+<title>نموذج لدعم قرار الصيانة</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#eef2f5;color:#17202a;font-family:Tahoma,Arial,sans-serif}
@@ -161,7 +162,7 @@ html,body{max-width:100%;overflow-x:hidden !important;}
 @media(max-width:700px){
  .top{padding:14px 12px}.top h1{font-size:17px}.container{padding:14px 10px}.wheel-select-box{margin-top:18px;padding:18px}.wheels{grid-template-columns:1fr}.nav{overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch}.nav button{flex:0 0 auto!important}.box{overflow:hidden}
 }
-</style>
+@media print{body{background:#fff!important}.top,#picker,.nav,.btn{display:none!important}.screen,.section{display:block!important}.box{box-shadow:none!important}.table-wrap{overflow:visible!important}table{display:table!important;white-space:normal!important}}</style>
 
 <style id="light-modern-ui">
 :root{
@@ -525,7 +526,7 @@ body{
 
 </head>
 <body>
-<header class="top"><h1>نموذج ذكاء اصطناعي أولي للتنبؤ بصيانة العجلات</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
+<header class="top"><h1>نموذج لدعم قرار الصيانة</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
 
 <div class="container">
 
@@ -553,7 +554,7 @@ onclick="toggleAddWheel()">＋ إضافة عجلة جديدة</button>
 <div class="grid">
 <div><label>اسم العجلة</label><input id="newWheelName" placeholder="مثال: عجلة 2"></div>
 <div><label>رقم العجلة</label><input id="newWheelNumber" placeholder="مثال: 25-12345"></div>
-<div><label>اسم السائق</label><input id="newDriverName" placeholder="اسم السائق"></div>
+
 <div><label>سلوك السائق</label><select id="newDriverBehavior"><option value="هادئ">هادئ</option><option value="متوسط" selected>متوسط</option><option value="قاسٍ">قاسٍ</option><option value="متنوع">متنوع</option></select></div>
 <div><label>نوع الوقود</label><select id="newWheelEngine"><option value="ديزل">ديزل</option><option value="بنزين">بنزين</option></select></div>
 <div><label>الكيلومترات</label><input id="newWheelKm" type="number" value="0"></div>
@@ -597,7 +598,7 @@ onclick="toggleAddWheel()">＋ إضافة عجلة جديدة</button>
 <div id="mostFailed" class="section"></div>
 <div id="partDetail" class="section"></div>
 <div id="addRecord" class="section"></div>
-<div id="ai" class="section"></div>
+<div id="ai" class="section"></div><div id="advanced" class="section"></div><div id="report" class="section"></div>
 </section>
 </div>
 
@@ -607,7 +608,7 @@ let demoMode=false;
 let productionDb=null;
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{
  wheels:[
-  {id:'W001',name:'العجلة 1',wheelNumber:'W001',driverName:'',driverBehavior:'غير مسجل',type:'',model:'',engine:'ديزل',km:0,hours:0,status:'تعمل'}
+  {id:'W001',name:'العجلة 1',wheelNumber:'W001',driverBehavior:'غير مسجل',type:'',model:'',engine:'ديزل',km:0,hours:0,status:'تعمل'}
  ],
  records:[],
  parts:[]
@@ -621,7 +622,7 @@ const wheelParts=()=>db.parts.filter(x=>x.wheelId===selected);
 
 function save(){
  if(demoMode) return;
- db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverName=w.driverName||'';w.driverBehavior=w.driverBehavior||'غير مسجل';});
+ db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverBehavior=w.driverBehavior||'غير مسجل';});
  localStorage.setItem(KEY,JSON.stringify(db));
 }
 function exportProductionData(){
@@ -669,7 +670,7 @@ function previewWheel(){
  const box=document.getElementById('wheelPreview');
  if(!box)return;
  const w=db.wheels.find(x=>x.id===id);
- box.innerHTML=w?`<b>${esc(w.name)}</b><br>رقم العجلة: ${esc(w.wheelNumber||w.id)} | السائق: ${esc(w.driverName||'غير مسجل')}<br>سلوك السائق: ${esc(w.driverBehavior||'غير مسجل')}<br>${esc(w.type)} ${esc(w.model)} | المحرك: ${esc(w.engine)} | الكيلومترات: ${esc(w.km)} | الحالة: ${esc(w.status)}`:'لم يتم اختيار عجلة';
+ box.innerHTML=w?`<b>${esc(w.name)}</b><br>رقم العجلة: ${esc(w.wheelNumber||w.id)}<br>سلوك السائق: ${esc(w.driverBehavior||'غير مسجل')}<br>${esc(w.type)} ${esc(w.model)} | المحرك: ${esc(w.engine)} | الكيلومترات: ${esc(w.km)} | الحالة: ${esc(w.status)}`:'لم يتم اختيار عجلة';
 }
 function openSelectedWheel(){
  const id=document.getElementById('wheelSelect')?.value;
@@ -694,18 +695,18 @@ function nav(id){
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
  document.querySelector(`#nav button[data-id="${id}"]`)?.classList.add('active');
- if(id==='ai' && typeof renderAI==='function') renderAI();
+ if(id==='ai' && typeof renderAI==='function') renderAI(); if(id==='advanced')renderAdvanced(); if(id==='report')renderReport();if(id==='advanced')renderAdvancedSection();if(id==='report')renderReportSection();
 }
 function renderWheel(){
  const w=wheel(), ls=logs(), ps=wheelParts();
  document.getElementById('wheelHeader').innerHTML=`
  <div class="hero-line">
-  <div><h2>${esc(w.name)}</h2><div class="muted">رقم العجلة: ${esc(w.wheelNumber||w.id)} | ${esc(w.type)} ${esc(w.model)} | ${esc(w.id)}</div><div class="muted" style="margin-top:8px">السائق: ${esc(w.driverName||'غير مسجل')} | سلوك السائق: ${esc(w.driverBehavior||'غير مسجل')}</div></div>
+  <div><h2>${esc(w.name)}</h2><div class="muted">رقم العجلة: ${esc(w.wheelNumber||w.id)} | ${esc(w.type)} ${esc(w.model)} | ${esc(w.id)}</div><div class="muted" style="margin-top:8px">سلوك السائق العام: ${esc(w.driverBehavior||'غير مسجل')}</div></div>
   <span class="status">${esc(w.status)}</span>
  </div>`;
  document.getElementById('nav').innerHTML=[
   ['dashboard','الرئيسية'],['addRecord','🛠️ صيانة جديدة'],['faults','سجل الأعطال'],
-  ['maintenance','سجل الصيانة'],['parts','الأجزاء العاطلة'],['mostFailed','🔧 الأكثر عطلاً'],['ai','🤖 تحليل AI']
+  ['maintenance','سجل الصيانة'],['parts','الأجزاء العاطلة'],['mostFailed','🔧 الأكثر عطلاً'],['ai','🤖 تحليل AI'],['advanced','📊 التحليل المتقدم'],['report','📄 التقرير']
  ].map((x,i)=>`<button data-id="${x[0]}" class="${i===0?'active':''}" onclick="nav('${x[0]}')">${x[1]}</button>`).join('');
 
  document.getElementById('dashboard').innerHTML=`
@@ -715,7 +716,7 @@ function renderWheel(){
   <div class="stat"><span>عدد الأعطال</span><b>${ls.filter(x=>x.fault).length}</b></div>
   <div class="stat"><span>الأجزاء المسجلة</span><b>${ps.length}</b></div>
  </div>
- <div class="box" style="margin-bottom:14px"><h3>بيانات السائق والعجلة</h3><div class="grid"><div><span class="muted">اسم السائق</span><p><b>${esc(w.driverName||'غير مسجل')}</b></p></div><div><span class="muted">رقم العجلة</span><p><b>${esc(w.wheelNumber||w.id)}</b></p></div><div><span class="muted">سلوك السائق</span><p><b>${esc(w.driverBehavior||'غير مسجل')}</b></p></div><div><span class="muted">نوع المحرك</span><p><b>${esc(w.engine||'-')}</b></p></div></div></div>
+ <div class="box" style="margin-bottom:14px"><h3>بيانات العجلة</h3><div class="grid"><div><span class="muted">رقم العجلة</span><p><b>${esc(w.wheelNumber||w.id)}</b></p></div><div><span class="muted">سلوك السائق</span><p><b>${esc(w.driverBehavior||'غير مسجل')}</b></p></div><div><span class="muted">نوع المحرك</span><p><b>${esc(w.engine||'-')}</b></p></div></div></div>
  <div class="grid">
   <div class="box"><h3>آخر عطل</h3>${ls.length?`<p><b>${esc(ls[ls.length-1].part)}</b></p><p>${esc(ls[ls.length-1].fault)}</p>`:''}</div>
   <div class="box"><h3>آخر صيانة</h3>${ls.length?`<p>الإجراء: <b>${esc(ls[ls.length-1].action)}</b></p><p>النتيجة: ${esc(ls[ls.length-1].result)}</p>`:''}</div>
@@ -730,6 +731,7 @@ function renderWheel(){
 
  const ew=document.getElementById('earlyFaultWarning');
  if(ew) ew.innerHTML=earlyFaultHTML(w,ls);
+ renderAdvanced();renderAdvanced();
 
  const faultRows=ls.filter(x=>x.fault);
  const faultParts=[...new Set(faultRows.map(x=>String(x.part||'').trim()).filter(Boolean))];
@@ -757,6 +759,7 @@ function renderWheel(){
  <div class="grid">
  <div><label>التاريخ</label><input id="rdate" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
  <div><label>الكيلومترات</label><input id="rkm" type="number" value="${esc(w.km)}"></div>
+ <div><label>اسم السائق وقت حدوث العطل / الصيانة</label><input id="rdriverName" placeholder="اسم السائق"></div>
  <div><label>الجزء</label><input id="rpart" placeholder="مثال: مضخة الوقود"></div>
  <div><label>رقم الجزء</label><input id="rnumber" placeholder="اختياري"></div>
  <div><label>نوع العطل</label><input id="rfault" placeholder="مثال: تسريب، كسر، ضعف"></div>
@@ -787,7 +790,7 @@ function renderWheel(){
 function addWheelFromForm(){
  const name=document.getElementById('newWheelName').value.trim();
  const wheelNumber=document.getElementById('newWheelNumber').value.trim();
- const driverName=document.getElementById('newDriverName').value.trim();
+  const driverName=document.getElementById('newDriverName').value.trim();
  const driverBehavior=document.getElementById('newDriverBehavior').value;
  const type='';
  const model='';
@@ -802,7 +805,7 @@ function addWheelFromForm(){
  document.getElementById('newWheelName').value='';
  document.getElementById('newWheelNumber').value='';
  document.getElementById('newDriverName').value='';
- document.getElementById('newDriverBehavior').value='متوسط';
+  document.getElementById('newDriverBehavior').value='متوسط';
  document.getElementById('newWheelKm').value='0';
  renderPicker();
  const picker=document.getElementById('wheelSelect');
@@ -838,7 +841,7 @@ function addRecord(){
  const date=document.getElementById('rdate').value,km=Number(document.getElementById('rkm').value)||w.km;
  db.records.push({id:'R'+Date.now(),wheelId:selected,date,km,part,
  number:document.getElementById('rnumber').value,fault:document.getElementById('rfault').value,
- severity:document.getElementById('rseverity').value,driverBehavior:w.driverBehavior||'غير مسجل',
+ severity:document.getElementById('rseverity').value,driverName:document.getElementById('rdriverName').value.trim(),driverBehavior:w.driverBehavior||'غير مسجل',
  maintType:document.getElementById('rmaintType').value,
  symptoms:document.getElementById('rsymptoms').value,
  reason:document.getElementById('rreason').value,
@@ -869,7 +872,7 @@ function openPart(id){
  <div class="box"><button class="btn light" onclick="nav('parts')">← أجزاء العجلة</button>
  <h2>${esc(p.name)}</h2>
  <div class="grid"><div><b>رقم الجزء</b><p>${esc(p.number||'-')}</p></div><div><b>تاريخ التركيب</b><p>${esc(p.install||'-')}</p></div><div><b>عدد الأعطال</b><p>${esc(p.failures)}</p></div><div><b>الحالة</b><p>${esc(p.status)}</p></div></div>
- <h3>تاريخ حياة الجزء</h3><div class="timeline">${ls.length?ls.map(x=>`<div class="event"><b>${esc(x.date)}</b><p>العطل: ${esc(x.fault||'لا يوجد')}</p><p>الإجراء: ${esc(x.action)}</p><p>النتيجة: ${esc(x.result)}</p></div>`).join(''):''}</div></div>`;
+ <h3>تاريخ حياة الجزء</h3><div class="timeline">${ls.length?ls.map(x=>`<div class="event"><b>${esc(x.date)}</b><p>العطل: ${esc(x.fault||'لا يوجد')}</p><p>السائق وقت العملية: ${esc(x.driverName||'غير مسجل')}</p><p>الإجراء: ${esc(x.action)}</p><p>النتيجة: ${esc(x.result)}</p></div>`).join(''):''}</div></div>`;
  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById('partDetail').classList.add('active');
  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
 }
@@ -984,14 +987,14 @@ function renderFaultHistory(){
  const box=document.getElementById('faultHistoryTable'); if(!box)return;
  const filter=document.getElementById('faultPartFilter')?.value||'';
  const rows=logs().filter(x=>x.fault&&(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
- box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.action||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>اسم السائق وقت العطل</th><th>الإجراء</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
 }
 
 function renderMaintenanceHistory(){
  const box=document.getElementById('maintenanceHistoryTable'); if(!box)return;
  const filter=document.getElementById('maintenancePartFilter')?.value||'';
  const rows=logs().filter(x=>(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
- box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>الإجراء</th><th>النتيجة</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>اسم السائق وقت الصيانة</th><th>الإجراء</th><th>النتيجة</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
 }
 
 function renderMostFailedPartsSection(){
@@ -1061,7 +1064,7 @@ function predictNextFault(){
  for(const label of labels){const binary=rows.map(r=>({x:r.x,y:r.label===label?1:0}));if(binary.filter(r=>r.y===1).length<2)continue;const forest=trainRandomForest(binary,60);scored.push({label,p:rfPredict(forest,current)});}
  scored.sort((a,b)=>b.p-a.p);const top=scored.slice(0,3);box.innerHTML=top.length?`<div class="notice"><h3>⚠️ التنبؤ بالعطل القادم</h3>${top.map((z,i)=>{const q=z.label.split('|');return `<p><b>${i+1}. ${esc(q[1])}</b>، الجزء: ${esc(q[0])}، احتمال نموذجي: <b>${Math.round(z.p*100)}%</b></p>`}).join('')}</div>`:'<div class="notice">البيانات غير كافية لبناء التنبؤ.</div>';
 }
-db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverName=w.driverName||'';w.driverBehavior=w.driverBehavior||'غير مسجل';});
+db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverBehavior=w.driverBehavior||'غير مسجل';});
 save();
 renderPicker();
 
@@ -1186,6 +1189,113 @@ function predictNextFault(){
  ${top.map((z,i)=>{const q=z.label.split('|');return `<p><b>${i+1}. ${esc(q[1])}</b>، الجزء: ${esc(q[0])}، احتمال تقديري: <b>${Math.round(z.p*100)}%</b></p>`}).join('')}
  </div>`;
 }
+
+
+// ===== التحليل المتقدم =====
+function aiCompleted(action){return logs().filter(r=>r.action===action&&(r.outcome==='success'||r.outcome==='failure')).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.km)||0)-(Number(b.km)||0));}
+function aiPct(a,b){return b?Math.round(a/b*100):0;}
+function aiActionStats(action){const r=aiCompleted(action),s=r.filter(x=>x.outcome==='success').length;return{n:r.length,s,f:r.length-s,p:aiPct(s,r.length)};}
+function aiPartLife(){const m={};logs().filter(r=>r.fault&&r.part).forEach(r=>{const p=String(r.part);(m[p]||(m[p]=[])).push(Number(r.km)||0)});return Object.entries(m).map(([p,k])=>{k.sort((a,b)=>a-b);const g=[];for(let i=1;i<k.length;i++)if(k[i]>k[i-1])g.push(k[i]-k[i-1]);return{p,n:k.length,avg:g.length?Math.round(g.reduce((a,b)=>a+b,0)/g.length):0}}).sort((a,b)=>b.n-a.n)}
+function aiHealth(w,r){let z=100;z-=Math.min(35,r.filter(x=>x.fault).length*4);z-=Math.min(40,r.filter(x=>x.outcome==='failure').length*8);const m={};r.filter(x=>x.fault).forEach(x=>m[x.part]=(m[x.part]||0)+1);z-=Math.min(15,Math.max(0,Math.max(0,...Object.values(m))-1)*5);return Math.max(0,Math.round(z));}
+function aiEval(action){const r=aiCompleted(action);if(r.length<20)return null;const cut=Math.floor(r.length*.8),tr=r.slice(0,cut).map(x=>({x:rfFeatures(x),y:x.outcome==='success'?1:0})),te=r.slice(cut);if(new Set(tr.map(x=>x.y)).size<2)return null;const f=trainRandomForest(tr,60);let tp=0,tn=0,fp=0,fn=0;te.forEach(x=>{const q=(rfPredict(f,rfFeatures(x))||0)>=.5?1:0,y=x.outcome==='success'?1:0;if(q&&y)tp++;else if(!q&&!y)tn++;else if(q&&!y)fp++;else fn++});const ac=aiPct(tp+tn,te.length),pr=aiPct(tp,tp+fp),re=aiPct(tp,tp+fn),f1=pr+re?Math.round(2*pr*re/(pr+re)):0;return{ac,pr,re,f1,tr:cut,te:te.length};}
+function renderAdvanced(){const b=document.getElementById('advanced'),w=wheel(),r=logs(),a=aiActionStats('إصلاح'),x=aiActionStats('استبدال'),h=aiHealth(w,r),life=aiPartLife(),er=aiEval('إصلاح'),ex=aiEval('استبدال');if(!b)return;const verdict=a.n>=10&&x.n>=10?(a.p>x.p+5?'الإصلاح أفضل في هذا السجل':x.p>a.p+5?'الاستبدال أفضل في هذا السجل':'النتائج متقاربة'):'تحتاج بيانات أكثر';const drivers={};r.forEach(q=>{const d=q.driverName||w.driverName||'غير مسجل';drivers[d]=(drivers[d]||0)+1});b.innerHTML='<div class="box"><h2>📊 التحليل المتقدم</h2><div class="grid"><div class="box"><h3>حالة العجلة</h3><div style="font-size:34px;font-weight:800">'+h+'%</div><b>'+(h>=80?'جيدة':h>=60?'تحتاج متابعة':'تحتاج صيانة قريبة')+'</b></div><div class="box"><h3>التعلم المستمر</h3><p>النموذج يعيد التدريب من السجل الفعلي عند اكتمال النتائج.</p><p>الحالات المكتملة: <b>'+r.filter(q=>q.outcome==='success'||q.outcome==='failure').length+'</b></p></div></div><div class="box"><h3>🔧 الإصلاح مقابل الاستبدال</h3><div class="table-wrap"><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.n+'</td><td>'+a.s+'</td><td>'+a.f+'</td><td>'+a.p+'%</td></tr><tr><td>استبدال</td><td>'+x.n+'</td><td>'+x.s+'</td><td>'+x.f+'</td><td>'+x.p+'%</td></tr></table></div><b>الاستنتاج:</b> '+verdict+'</div><div class="box"><h3>📏 عمر الأجزاء</h3><div class="table-wrap"><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة بين الأعطال</th></tr>'+life.slice(0,12).map(q=>'<tr><td>'+esc(q.p)+'</td><td>'+q.n+'</td><td>'+(q.avg?q.avg.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</table></div></div><div class="box"><h3>👤 سجل السائقين</h3><div class="table-wrap"><table><tr><th>السائق</th><th>الأحداث</th></tr>'+Object.entries(drivers).map(q=>'<tr><td>'+esc(q[0])+'</td><td>'+q[1]+'</td></tr>').join('')+'</table></div></div><div class="box"><h3>🧪 التقييم العلمي</h3><p>'+(er?'الإصلاح: Accuracy '+er.ac+'%، Precision '+er.pr+'%، Recall '+er.re+'%، F1 '+er.f1+'%، تدريب '+er.tr+'، اختبار '+er.te+'.':'الإصلاح: يلزم 20 حالة مكتملة على الأقل.')+'</p><p>'+(ex?'الاستبدال: Accuracy '+ex.ac+'%، Precision '+ex.pr+'%، Recall '+ex.re+'%، F1 '+ex.f1+'%.':'الاستبدال: يلزم 20 حالة مكتملة على الأقل.')+'</p><p class="muted">التقسيم زمني، 80% أقدم للتدريب و20% أحدث للاختبار.</p></div><div class="box"><h3>🔮 التنبؤ بالعطل القادم</h3><div id="advancedNextFault"></div></div></div>';const n=document.getElementById('advancedNextFault');if(n)n.innerHTML=typeof nextFaultAnalysisHTML==='function'?nextFaultAnalysisHTML(w,r):earlyFaultHTML(w,r);}
+function renderAdvancedSection(){renderAdvanced();}
+function printReport(){const w=wheel(),r=logs(),h=aiHealth(w,r),a=aiActionStats('إصلاح'),x=aiActionStats('استبدال'),life=aiPartLife(),er=aiEval('إصلاح'),ex=aiEval('استبدال'),win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة');return}win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma;padding:25px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}</style></head><body><h1>تقرير نموذج التنبؤ بصيانة العجلات</h1><p>العجلة: <b>'+esc(w.name)+'</b>، الرقم: '+esc(w.wheelNumber||w.id)+'، السائق: '+esc(w.driverName||'غير مسجل')+'</p><p>مؤشر الحالة: <b>'+h+'%</b></p><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>النسبة</th></tr><tr><td>إصلاح</td><td>'+a.n+'</td><td>'+a.s+'</td><td>'+a.f+'</td><td>'+a.p+'%</td></tr><tr><td>استبدال</td><td>'+x.n+'</td><td>'+x.s+'</td><td>'+x.f+'</td><td>'+x.p+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+life.slice(0,15).map(q=>'<tr><td>'+esc(q.p)+'</td><td>'+q.n+'</td><td>'+(q.avg?q.avg.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</table><h2>التقييم العلمي</h2><p>'+(er?'الإصلاح: Accuracy '+er.ac+'%، Precision '+er.pr+'%، Recall '+er.re+'%، F1 '+er.f1+'%.':'الإصلاح: غير متاح.')+'</p><p>'+(ex?'الاستبدال: Accuracy '+ex.ac+'%، Precision '+ex.pr+'%، Recall '+ex.re+'%، F1 '+ex.f1+'%.':'الاستبدال: غير متاح.')+'</p><p>التقرير مبني على بيانات العجلة المسجلة داخل البرنامج.</p><p>'+new Date().toLocaleString('ar-IQ')+'</p></body></html>');win.document.close();setTimeout(()=>win.print(),500);}
+function renderReportSection(){const b=document.getElementById('report');if(b)b.innerHTML='<div class="box"><h2>📄 التقرير</h2><div class="notice">يمكن حفظ التقرير كـ PDF من نافذة الطباعة.</div><button class="btn primary" onclick="printReport()">🖨️ إنشاء التقرير وحفظ PDF</button></div>';}
+
+
+// ===== التحليل المتقدم والتقرير =====
+function completedFor(action){
+ const arr=logs().filter(r=>r.action===action&&(r.outcome==='success'||r.outcome==='failure'));
+ return arr.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.km)||0)-(Number(b.km)||0));
+}
+function percent(n,d){return d?Math.round(n/d*100):0}
+function actionSummary(action){
+ const r=completedFor(action), success=r.filter(x=>x.outcome==='success').length;
+ return {n:r.length,success,failure:r.length-success,rate:percent(success,r.length)};
+}
+function repairReplacementSummary(){
+ const repair=actionSummary('إصلاح'), replace=actionSummary('استبدال');
+ let conclusion='لا توجد بيانات كافية للمقارنة.';
+ if(repair.n>=10&&replace.n>=10){
+  if(repair.rate>replace.rate+5) conclusion='الإصلاح أفضل في السجل الحالي.';
+  else if(replace.rate>repair.rate+5) conclusion='الاستبدال أفضل في السجل الحالي.';
+  else conclusion='النتائج متقاربة في السجل الحالي.';
+ }
+ return {repair,replace,conclusion};
+}
+function partLifeSummary(){
+ const map={};
+ logs().filter(r=>r.fault&&r.part).forEach(r=>{const p=String(r.part).trim();if(!map[p])map[p]=[];map[p].push(Number(r.km)||0);});
+ return Object.entries(map).map(([part,kms])=>{
+  kms.sort((a,b)=>a-b);const gaps=[];
+  for(let i=1;i<kms.length;i++)if(kms[i]>kms[i-1])gaps.push(kms[i]-kms[i-1]);
+  return {part,failures:kms.length,avgKm:gaps.length?Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length):0};
+ }).sort((a,b)=>b.failures-a.failures||a.avgKm-b.avgKm);
+}
+function wheelHealthScore(){
+ const rs=logs();let score=100;
+ const faults=rs.filter(r=>r.fault).length;
+ const failed=rs.filter(r=>r.outcome==='failure').length;
+ score-=Math.min(35,faults*4);score-=Math.min(40,failed*8);
+ const counts={};rs.filter(r=>r.fault).forEach(r=>{counts[r.part]=(counts[r.part]||0)+1;});
+ const repeat=Math.max(0,...Object.values(counts));score-=Math.min(15,Math.max(0,repeat-1)*5);
+ return Math.max(0,Math.min(100,Math.round(score)));
+}
+function healthLabel(score){return score>=80?'جيدة':score>=60?'تحتاج متابعة':'تحتاج صيانة قريبة';}
+function evaluateAction(action){
+ const rows=completedFor(action);
+ if(rows.length<20)return {ready:false,n:rows.length};
+ const ordered=rows.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.id||'').localeCompare(String(b.id||'')));
+ const cut=Math.max(10,Math.floor(ordered.length*.8));
+ const train=ordered.slice(0,cut).map(r=>({x:rfFeatures(r),y:r.outcome==='success'?1:0}));
+ const test=ordered.slice(cut).map(r=>({x:rfFeatures(r),y:r.outcome==='success'?1:0}));
+ if(new Set(train.map(x=>x.y)).size<2||!test.length)return {ready:false,n:rows.length};
+ const forest=trainRandomForest(train,60);let tp=0,tn=0,fp=0,fn=0;
+ test.forEach(r=>{const pred=(rfPredict(forest,r.x)||0)>=.5?1:0;if(pred&&r.y)tp++;else if(!pred&&!r.y)tn++;else if(pred&&!r.y)fp++;else fn++;});
+ const accuracy=(tp+tn)/test.length,precision=(tp+fp)?tp/(tp+fp):0,recall=(tp+fn)?tp/(tp+fn):0,f1=(precision+recall)?2*precision*recall/(precision+recall):0;
+ return {ready:true,n:rows.length,train:train.length,test:test.length,accuracy,precision,recall,f1};
+}
+function nextFaultPredictionHTML(){
+ const rs=logs().slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.km)||0)-(Number(b.km)||0));
+ const transitions=[];
+ for(let i=0;i<rs.length-1;i++){
+  if(!rs[i].part||!rs[i+1].part)continue;
+  transitions.push({from:rs[i].part,to:rs[i+1].part});
+ }
+ if(transitions.length<10)return '<div class="notice">التنبؤ بالعطل القادم غير متاح بعد. نحتاج 10 انتقالات تاريخية على الأقل.</div>';
+ const counts={};transitions.forEach(t=>{const k=t.from+'|'+t.to;counts[k]=(counts[k]||0)+1;});
+ const current=rs[rs.length-1].part;const candidates=Object.entries(counts).filter(([k])=>k.startsWith(current+'|')).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ if(!candidates.length)return '<div class="notice">لا توجد انتقالات تاريخية كافية لهذا الجزء.</div>';
+ const total=candidates.reduce((s,x)=>s+x[1],0);
+ return candidates.map((x,i)=>{const q=x[0].split('|');return '<p><b>'+(i+1)+'. '+esc(q[1])+'</b>، بعد '+esc(q[0])+'، تكرار تاريخي '+x[1]+' مرة، نسبة داخل الحالات المتاحة '+Math.round(x[1]/total*100)+'%.</p>';}).join('');
+}
+function driverHistoryHTML(){
+ const w=wheel(),map={};logs().forEach(r=>{const d=String(r.driverName||w.driverName||'غير مسجل').trim()||'غير مسجل';if(!map[d])map[d]={events:0,faults:0,success:0,failure:0};map[d].events++;if(r.fault)map[d].faults++;if(r.outcome==='success')map[d].success++;if(r.outcome==='failure')map[d].failure++;});
+ const rows=Object.entries(map).sort((a,b)=>b[1].events-a[1].events);
+ return rows.length?'<div class="table-wrap"><table><thead><tr><th>السائق</th><th>الأحداث</th><th>الأعطال</th><th>نجاح</th><th>فشل</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+x[1].events+'</td><td>'+x[1].faults+'</td><td>'+x[1].success+'</td><td>'+x[1].failure+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice">لا توجد بيانات سائق كافية.</div>';
+}
+function advancedAnalysis(){
+ const a=repairReplacementSummary(),life=partLifeSummary(),h=wheelHealthScore(),er=evaluateAction('إصلاح'),ex=evaluateAction('استبدال');
+ const metric=(name,m)=>m.ready?'<div class="notice"><b>'+name+'</b>: Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%، تدريب '+m.train+'، اختبار '+m.test+'.</div>':'<div class="notice"><b>'+name+'</b>: التقييم غير متاح بعد، يلزم 20 حالة مكتملة على الأقل.</div>';
+ const lifeHtml=life.length?'<div class="table-wrap"><table><thead><tr><th>الجزء</th><th>مرات العطل</th><th>متوسط المسافة بين الأعطال</th></tr></thead><tbody>'+life.slice(0,12).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice">لا توجد بيانات كافية.</div>';
+ return '<div class="grid"><div class="box"><h3>حالة العجلة</h3><div style="font-size:36px;font-weight:800">'+h+'%</div><p><b>'+healthLabel(h)+'</b></p><p>الأعطال: '+logs().filter(x=>x.fault).length+'، السجلات: '+logs().length+'</p></div><div class="box"><h3>التعلم المستمر</h3><p>البيانات الفعلية للعجلة هي مصدر التعلم.</p><p>البيانات التجريبية لا تدخل في قاعدة الإنتاج.</p></div></div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>🔧 الإصلاح مقابل الاستبدال</h3><div class="table-wrap"><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table></div><p><b>الاستنتاج:</b> '+a.conclusion+'</p><p class="muted">الاستنتاج خاص بالسجل المتوفر للعجلة.</p></div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>📏 عمر الأجزاء</h3>'+lifeHtml+'</div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>👤 تاريخ السائقين</h3>'+driverHistoryHTML()+'</div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>🧪 التقييم العلمي</h3>'+metric('الإصلاح',er)+metric('الاستبدال',ex)+'<p class="muted">التقسيم زمني، 80% أقدم للتدريب و20% أحدث للاختبار.</p></div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>🔮 التنبؤ بالعطل القادم</h3>'+nextFaultPredictionHTML()+'</div>';
+}
+function renderAdvanced(){const b=document.getElementById('advanced');if(b)b.innerHTML='<div class="box"><h2>📊 التحليل المتقدم</h2>'+advancedAnalysis()+'</div>';}
+function printReport(){
+ const w=wheel(),a=repairReplacementSummary(),life=partLifeSummary(),h=wheelHealthScore(),er=evaluateAction('إصلاح'),ex=evaluateAction('استبدال');
+ const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة.');return;}
+ const rows=life.slice(0,15).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('');
+ const metric=m=>m.ready?'Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%':'غير متاح بعد';
+ win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#173247}table{width:100%;border-collapse:collapse;margin:12px 0 22px}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}.box{border:1px solid #ddd;padding:12px;margin:10px 0}</style></head><body><h1>نموذج لدعم قرار الصيانة</h1><div class="box">العجلة: <b>'+esc(w.name)+'</b><br>رقم العجلة: '+esc(w.wheelNumber||w.id)+'<br>السائق: '+esc(w.driverName||'غير مسجل')+'<br>مؤشر الحالة: <b>'+h+'%</b>، '+healthLabel(h)+'</div><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+rows+'</table><h2>التقييم العلمي</h2><p>الإصلاح: '+metric(er)+'</p><p>الاستبدال: '+metric(ex)+'</p><p>البيانات التجريبية الاصطناعية منفصلة عن بيانات الإنتاج.</p><p>تاريخ التقرير: '+new Date().toLocaleString('ar-IQ')+'</p></body></html>');
+ win.document.close();setTimeout(()=>win.print(),500);
+}
+function renderReport(){const b=document.getElementById('report');if(b)b.innerHTML='<div class="box"><h2>📄 التقرير الاحترافي</h2><div class="notice">يمكن حفظ التقرير كـ PDF من نافذة الطباعة.</div><button class="btn primary" onclick="printReport()">🖨️ إنشاء التقرير</button></div>';}
 
 // ===== نموذج تعلم آلي محلي: Random Forest =====
 function rfFeatures(r){
@@ -1318,34 +1428,14 @@ function mlActionPrediction(current,action){
 }
 
 function runAI(){
- const partEl=document.getElementById('aipart');
- const current={
-   part:partEl?partEl.value:'',
-   fault:document.getElementById('aifault')?.value||'',
-   severity:document.getElementById('aisev')?.value||'بسيط',
-   km:Number(document.getElementById('aikm')?.value)||0,
-   driverBehavior:document.getElementById('aidriver')?.value||'غير معروف',
-   partAgeKm:Number(document.getElementById('aipartAgeKm')?.value)||0,
-   partFailures:Number(document.getElementById('aipartFailures')?.value)||0,
-   kmSinceService:Number(document.getElementById('aikmSinceService')?.value)||0,
-   hours:Number(document.getElementById('aihours')?.value)||0
- };
- const rep=mlActionPrediction(current,'إصلاح');
- const repl=mlActionPrediction(current,'استبدال');
+ const current={part:document.getElementById('aipart')?.value||'',fault:document.getElementById('aifault')?.value||'',severity:document.getElementById('aisev')?.value||'بسيط',km:Number(document.getElementById('aikm')?.value)||0,driverBehavior:document.getElementById('aidriver')?.value||'غير معروف',partAgeKm:Number(document.getElementById('aipartAgeKm')?.value)||0,partFailures:Number(document.getElementById('aipartFailures')?.value)||0,kmSinceService:Number(document.getElementById('aikmSinceService')?.value)||0,hours:Number(document.getElementById('aihours')?.value)||0};
+ const rep=mlActionPrediction(current,'إصلاح'), repl=mlActionPrediction(current,'استبدال');
  const fmt=x=>x.p==null?'غير متاح':Math.round(x.p*100)+'%';
- let msg='';
- if(rep.p==null&&repl.p==null){
-   msg=`<div class="notice"><h3 style="margin-top:0">البيانات غير كافية لتدريب النموذج</h3>
-   <p>Random Forest يحتاج حالات صيانة مكتملة، أي حالات سُجل لها نجاح أو فشل.</p>
-   <p>الإصلاح: ${rep.n} حالة مكتملة. الاستبدال: ${repl.n} حالة مكتملة.</p>
-   <p>يلزم على الأقل 10 حالات مكتملة لكل إجراء قبل عرض احتمال تعلم آلي.</p></div>`;
- }else{
-   msg=`<div class="notice"><h3 style="margin-top:0">نتيجة Random Forest</h3>
-   <p>احتمال نجاح الإصلاح: <b>${fmt(rep)}</b>، عدد عينات التدريب: ${rep.n}</p>
-   <p>احتمال نجاح الاستبدال: <b>${fmt(repl)}</b>، عدد عينات التدريب: ${repl.n}</p>
-   </div>`;
- }
- document.getElementById('aiResult').innerHTML=msg;
+ let decision='لا يمكن إصدار قرار تعلم آلي بعد';
+ if(rep.p!=null&&repl.p!=null){if(rep.p>repl.p+0.05)decision='يميل النموذج إلى الإصلاح';else if(repl.p>rep.p+0.05)decision='يميل النموذج إلى الاستبدال';else decision='النتيجتان متقاربتان، ولا يوجد تفوق واضح';}
+ let msg=`<div class="notice"><h3 style="margin-top:0">🤖 قرار AI للحالة الحالية</h3><p>احتمال نجاح الإصلاح: <b>${fmt(rep)}</b>، عدد الحالات المكتملة: ${rep.n}</p><p>احتمال نجاح الاستبدال: <b>${fmt(repl)}</b>، عدد الحالات المكتملة: ${repl.n}</p><p><b>القرار:</b> ${decision}</p>`;
+ if(rep.p==null||repl.p==null)msg+=`<p class="muted">يحتاج النموذج إلى 10 حالات مكتملة على الأقل لكل إجراء حتى يعطي احتمال تعلم آلي. قبل ذلك يعرض البيانات المتاحة فقط.</p>`;
+ msg+=`</div>`; document.getElementById('aiResult').innerHTML=msg;
 }
 
 function showDemoModal(){
