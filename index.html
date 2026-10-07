@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="manifest" href="manifest.webmanifest">
 <title>نموذج لدعم قرار الصيانة</title>
 <style>
 *{box-sizing:border-box}
@@ -695,7 +694,7 @@ function nav(id){
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
  document.querySelector(`#nav button[data-id="${id}"]`)?.classList.add('active');
- if(id==='ai' && typeof renderAI==='function') renderAI(); if(id==='advanced')renderAdvanced(); if(id==='report')renderReport();if(id==='advanced')renderAdvancedSection();if(id==='report')renderReportSection();
+ if(id==='ai' && typeof renderAI==='function') renderAI(); if(id==='advanced')renderAdvancedSection(); if(id==='report')renderReportSection();
 }
 function renderWheel(){
  const w=wheel(), ls=logs(), ps=wheelParts();
@@ -731,7 +730,7 @@ function renderWheel(){
 
  const ew=document.getElementById('earlyFaultWarning');
  if(ew) ew.innerHTML=earlyFaultHTML(w,ls);
- renderAdvanced();renderAdvanced();
+ renderAdvanced();
 
  const faultRows=ls.filter(x=>x.fault);
  const faultParts=[...new Set(faultRows.map(x=>String(x.part||'').trim()).filter(Boolean))];
@@ -839,6 +838,11 @@ function addWheel(){ document.getElementById('newWheelName')?.focus(); }
 function addRecord(){
  const w=wheel(), part=document.getElementById('rpart').value.trim();if(!part)return alert('أدخل اسم الجزء');
  const date=document.getElementById('rdate').value,km=Number(document.getElementById('rkm').value)||w.km;
+ const previousKms=db.records.filter(r=>r.wheelId===selected).map(r=>Number(r.km)||0).filter(v=>v>0);
+ const previousKm=Math.max(0,w.km||0,...previousKms);
+ if(km<previousKm){
+   return alert('قراءة الكيلومترات الجديدة أقل من آخر قراءة مسجلة ('+previousKm.toLocaleString()+' كم). يرجى إدخال قراءة صحيحة.');
+ }
  db.records.push({id:'R'+Date.now(),wheelId:selected,date,km,part,
  number:document.getElementById('rnumber').value,fault:document.getElementById('rfault').value,
  severity:document.getElementById('rseverity').value,driverName:document.getElementById('rdriverName').value.trim(),driverBehavior:w.driverBehavior||'غير مسجل',
@@ -942,20 +946,7 @@ function actionModel(action){
  if(rows.length<10)return {rows,forest:null};
  return {rows,forest:trainRandomForest(rows,80)};
 }
-function evaluateAction(action){
- const rows=allCompletedRecords().filter(r=>r.action===action).map(r=>({x:rfFeatures(r),y:r.outcome==='success'?1:0,record:r}));
- if(rows.length<20)return {n:rows.length,ready:false,accuracy:null,precision:null,recall:null,f1:null,train:0,test:0};
- const ordered=rows.slice().sort((a,b)=>String(a.record.date).localeCompare(String(b.record.date))||String(a.record.id).localeCompare(String(b.record.id)));
- const cut=Math.max(10,Math.floor(ordered.length*0.8));
- const train=ordered.slice(0,cut), test=ordered.slice(cut);
- const forest=trainRandomForest(train,80); let tp=0,tn=0,fp=0,fn=0;
- test.forEach(r=>{const p=rfPredict(forest,r.x)>=0.5?1:0;if(p===1&&r.y===1)tp++;else if(p===0&&r.y===0)tn++;else if(p===1&&r.y===0)fp++;else fn++;});
- const accuracy=test.length?(tp+tn)/test.length:null;
- const precision=(tp+fp)>0?tp/(tp+fp):null;
- const recall=(tp+fn)>0?tp/(tp+fn):null;
- const f1=(precision!=null&&recall!=null&&(precision+recall)>0)?2*precision*recall/(precision+recall):null;
- return {n:rows.length,ready:true,accuracy,precision,recall,f1,train:train.length,test:test.length,tp,tn,fp,fn};
-}
+
 function metricsText(m){
  if(!m.ready)return 'غير كافٍ للتقييم المستقل، يحتاج 20 حالة مكتملة على الأقل.';
  const pct=v=>v==null?'غير متاح':Math.round(v*100)+'%';
@@ -1055,15 +1046,7 @@ function runAI(){
  if(near.length)msg+=`<h4>أقرب الحالات التاريخية</h4><ul>${near.map(o=>`<li>${esc(o.r.part)}، ${esc(o.r.fault||'-')}، ${esc(o.r.action)}، النتيجة: ${o.r.outcome==='success'?'نجاح':'فشل'}</li>`).join('')}</ul>`;
  msg+='</div>';document.getElementById('aiResult').innerHTML=msg;
 }
-function predictNextFault(){
- const box=document.getElementById('faultPrediction');if(!box)return;
- const rs=db.records.filter(r=>r.wheelId===selected&&r.fault).sort((a,b)=>String(a.date).localeCompare(String(b.date))||(Number(a.km)||0)-(Number(b.km)||0));
- if(rs.length<10){box.innerHTML='<div class="notice">التنبؤ غير متاح بعد. نحتاج سجلات تاريخية أكثر.</div>';return;}
- const rows=[];for(let i=0;i<rs.length-1;i++){const a=rs[i],b=rs[i+1];rows.push({x:rfFeatures(a),label:(b.part||'')+'|'+(b.fault||'')});}
- const labels=[...new Set(rows.map(r=>r.label))];const current=rfFeatures(rs[rs.length-1]);const scored=[];
- for(const label of labels){const binary=rows.map(r=>({x:r.x,y:r.label===label?1:0}));if(binary.filter(r=>r.y===1).length<2)continue;const forest=trainRandomForest(binary,60);scored.push({label,p:rfPredict(forest,current)});}
- scored.sort((a,b)=>b.p-a.p);const top=scored.slice(0,3);box.innerHTML=top.length?`<div class="notice"><h3>⚠️ التنبؤ بالعطل القادم</h3>${top.map((z,i)=>{const q=z.label.split('|');return `<p><b>${i+1}. ${esc(q[1])}</b>، الجزء: ${esc(q[0])}، احتمال نموذجي: <b>${Math.round(z.p*100)}%</b></p>`}).join('')}</div>`:'<div class="notice">البيانات غير كافية لبناء التنبؤ.</div>';
-}
+
 db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverBehavior=w.driverBehavior||'غير مسجل';});
 save();
 renderPicker();
@@ -1198,9 +1181,9 @@ function aiActionStats(action){const r=aiCompleted(action),s=r.filter(x=>x.outco
 function aiPartLife(){const m={};logs().filter(r=>r.fault&&r.part).forEach(r=>{const p=String(r.part);(m[p]||(m[p]=[])).push(Number(r.km)||0)});return Object.entries(m).map(([p,k])=>{k.sort((a,b)=>a-b);const g=[];for(let i=1;i<k.length;i++)if(k[i]>k[i-1])g.push(k[i]-k[i-1]);return{p,n:k.length,avg:g.length?Math.round(g.reduce((a,b)=>a+b,0)/g.length):0}}).sort((a,b)=>b.n-a.n)}
 function aiHealth(w,r){let z=100;z-=Math.min(35,r.filter(x=>x.fault).length*4);z-=Math.min(40,r.filter(x=>x.outcome==='failure').length*8);const m={};r.filter(x=>x.fault).forEach(x=>m[x.part]=(m[x.part]||0)+1);z-=Math.min(15,Math.max(0,Math.max(0,...Object.values(m))-1)*5);return Math.max(0,Math.round(z));}
 function aiEval(action){const r=aiCompleted(action);if(r.length<20)return null;const cut=Math.floor(r.length*.8),tr=r.slice(0,cut).map(x=>({x:rfFeatures(x),y:x.outcome==='success'?1:0})),te=r.slice(cut);if(new Set(tr.map(x=>x.y)).size<2)return null;const f=trainRandomForest(tr,60);let tp=0,tn=0,fp=0,fn=0;te.forEach(x=>{const q=(rfPredict(f,rfFeatures(x))||0)>=.5?1:0,y=x.outcome==='success'?1:0;if(q&&y)tp++;else if(!q&&!y)tn++;else if(q&&!y)fp++;else fn++});const ac=aiPct(tp+tn,te.length),pr=aiPct(tp,tp+fp),re=aiPct(tp,tp+fn),f1=pr+re?Math.round(2*pr*re/(pr+re)):0;return{ac,pr,re,f1,tr:cut,te:te.length};}
-function renderAdvanced(){const b=document.getElementById('advanced'),w=wheel(),r=logs(),a=aiActionStats('إصلاح'),x=aiActionStats('استبدال'),h=aiHealth(w,r),life=aiPartLife(),er=aiEval('إصلاح'),ex=aiEval('استبدال');if(!b)return;const verdict=a.n>=10&&x.n>=10?(a.p>x.p+5?'الإصلاح أفضل في هذا السجل':x.p>a.p+5?'الاستبدال أفضل في هذا السجل':'النتائج متقاربة'):'تحتاج بيانات أكثر';const drivers={};r.forEach(q=>{const d=q.driverName||w.driverName||'غير مسجل';drivers[d]=(drivers[d]||0)+1});b.innerHTML='<div class="box"><h2>📊 التحليل المتقدم</h2><div class="grid"><div class="box"><h3>حالة العجلة</h3><div style="font-size:34px;font-weight:800">'+h+'%</div><b>'+(h>=80?'جيدة':h>=60?'تحتاج متابعة':'تحتاج صيانة قريبة')+'</b></div><div class="box"><h3>التعلم المستمر</h3><p>النموذج يعيد التدريب من السجل الفعلي عند اكتمال النتائج.</p><p>الحالات المكتملة: <b>'+r.filter(q=>q.outcome==='success'||q.outcome==='failure').length+'</b></p></div></div><div class="box"><h3>🔧 الإصلاح مقابل الاستبدال</h3><div class="table-wrap"><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.n+'</td><td>'+a.s+'</td><td>'+a.f+'</td><td>'+a.p+'%</td></tr><tr><td>استبدال</td><td>'+x.n+'</td><td>'+x.s+'</td><td>'+x.f+'</td><td>'+x.p+'%</td></tr></table></div><b>الاستنتاج:</b> '+verdict+'</div><div class="box"><h3>📏 عمر الأجزاء</h3><div class="table-wrap"><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة بين الأعطال</th></tr>'+life.slice(0,12).map(q=>'<tr><td>'+esc(q.p)+'</td><td>'+q.n+'</td><td>'+(q.avg?q.avg.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</table></div></div><div class="box"><h3>👤 سجل السائقين</h3><div class="table-wrap"><table><tr><th>السائق</th><th>الأحداث</th></tr>'+Object.entries(drivers).map(q=>'<tr><td>'+esc(q[0])+'</td><td>'+q[1]+'</td></tr>').join('')+'</table></div></div><div class="box"><h3>🧪 التقييم العلمي</h3><p>'+(er?'الإصلاح: Accuracy '+er.ac+'%، Precision '+er.pr+'%، Recall '+er.re+'%، F1 '+er.f1+'%، تدريب '+er.tr+'، اختبار '+er.te+'.':'الإصلاح: يلزم 20 حالة مكتملة على الأقل.')+'</p><p>'+(ex?'الاستبدال: Accuracy '+ex.ac+'%، Precision '+ex.pr+'%، Recall '+ex.re+'%، F1 '+ex.f1+'%.':'الاستبدال: يلزم 20 حالة مكتملة على الأقل.')+'</p><p class="muted">التقسيم زمني، 80% أقدم للتدريب و20% أحدث للاختبار.</p></div><div class="box"><h3>🔮 التنبؤ بالعطل القادم</h3><div id="advancedNextFault"></div></div></div>';const n=document.getElementById('advancedNextFault');if(n)n.innerHTML=typeof nextFaultAnalysisHTML==='function'?nextFaultAnalysisHTML(w,r):earlyFaultHTML(w,r);}
+
 function renderAdvancedSection(){renderAdvanced();}
-function printReport(){const w=wheel(),r=logs(),h=aiHealth(w,r),a=aiActionStats('إصلاح'),x=aiActionStats('استبدال'),life=aiPartLife(),er=aiEval('إصلاح'),ex=aiEval('استبدال'),win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة');return}win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma;padding:25px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}</style></head><body><h1>تقرير نموذج التنبؤ بصيانة العجلات</h1><p>العجلة: <b>'+esc(w.name)+'</b>، الرقم: '+esc(w.wheelNumber||w.id)+'، السائق: '+esc(w.driverName||'غير مسجل')+'</p><p>مؤشر الحالة: <b>'+h+'%</b></p><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>النسبة</th></tr><tr><td>إصلاح</td><td>'+a.n+'</td><td>'+a.s+'</td><td>'+a.f+'</td><td>'+a.p+'%</td></tr><tr><td>استبدال</td><td>'+x.n+'</td><td>'+x.s+'</td><td>'+x.f+'</td><td>'+x.p+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+life.slice(0,15).map(q=>'<tr><td>'+esc(q.p)+'</td><td>'+q.n+'</td><td>'+(q.avg?q.avg.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</table><h2>التقييم العلمي</h2><p>'+(er?'الإصلاح: Accuracy '+er.ac+'%، Precision '+er.pr+'%، Recall '+er.re+'%، F1 '+er.f1+'%.':'الإصلاح: غير متاح.')+'</p><p>'+(ex?'الاستبدال: Accuracy '+ex.ac+'%، Precision '+ex.pr+'%، Recall '+ex.re+'%، F1 '+ex.f1+'%.':'الاستبدال: غير متاح.')+'</p><p>التقرير مبني على بيانات العجلة المسجلة داخل البرنامج.</p><p>'+new Date().toLocaleString('ar-IQ')+'</p></body></html>');win.document.close();setTimeout(()=>win.print(),500);}
+
 function renderReportSection(){const b=document.getElementById('report');if(b)b.innerHTML='<div class="box"><h2>📄 التقرير</h2><div class="notice">يمكن حفظ التقرير كـ PDF من نافذة الطباعة.</div><button class="btn primary" onclick="printReport()">🖨️ إنشاء التقرير وحفظ PDF</button></div>';}
 
 
@@ -1427,16 +1410,7 @@ function mlActionPrediction(current,action){
  return {p:rfPredict(forest,rfFeatures(current)),n:rows.length,forest:true};
 }
 
-function runAI(){
- const current={part:document.getElementById('aipart')?.value||'',fault:document.getElementById('aifault')?.value||'',severity:document.getElementById('aisev')?.value||'بسيط',km:Number(document.getElementById('aikm')?.value)||0,driverBehavior:document.getElementById('aidriver')?.value||'غير معروف',partAgeKm:Number(document.getElementById('aipartAgeKm')?.value)||0,partFailures:Number(document.getElementById('aipartFailures')?.value)||0,kmSinceService:Number(document.getElementById('aikmSinceService')?.value)||0,hours:Number(document.getElementById('aihours')?.value)||0};
- const rep=mlActionPrediction(current,'إصلاح'), repl=mlActionPrediction(current,'استبدال');
- const fmt=x=>x.p==null?'غير متاح':Math.round(x.p*100)+'%';
- let decision='لا يمكن إصدار قرار تعلم آلي بعد';
- if(rep.p!=null&&repl.p!=null){if(rep.p>repl.p+0.05)decision='يميل النموذج إلى الإصلاح';else if(repl.p>rep.p+0.05)decision='يميل النموذج إلى الاستبدال';else decision='النتيجتان متقاربتان، ولا يوجد تفوق واضح';}
- let msg=`<div class="notice"><h3 style="margin-top:0">🤖 قرار AI للحالة الحالية</h3><p>احتمال نجاح الإصلاح: <b>${fmt(rep)}</b>، عدد الحالات المكتملة: ${rep.n}</p><p>احتمال نجاح الاستبدال: <b>${fmt(repl)}</b>، عدد الحالات المكتملة: ${repl.n}</p><p><b>القرار:</b> ${decision}</p>`;
- if(rep.p==null||repl.p==null)msg+=`<p class="muted">يحتاج النموذج إلى 10 حالات مكتملة على الأقل لكل إجراء حتى يعطي احتمال تعلم آلي. قبل ذلك يعرض البيانات المتاحة فقط.</p>`;
- msg+=`</div>`; document.getElementById('aiResult').innerHTML=msg;
-}
+
 
 function showDemoModal(){
  const old=document.getElementById('demoModal');
@@ -1521,7 +1495,7 @@ function openDemoTest(){
  rows.forEach((r,i)=>{
   const [part,fault,severity,action,outcome]=r;
   const km=51000+i*550;
-  db.records.push({id:'NTEST'+(i+1),wheelId:n.id,date:'2026-09-'+String((i%28)+1).padStart(2,'0'),km,part,number:'NIS-'+String(i+1).padStart(3,'0'),fault,severity,driverBehavior:'متوسط',action,cost:outcome==='success'?250:180,notes:'بيانات تجريبية لاختبار التحليل فقط',outcome,followDays:30,partAgeKm:1000+i*300,partFailures:rows.slice(0,i).filter(x=>x[0]===part).length,kmSinceService:1000+i*300,hours:2800,result:outcome==='success'?'ناجح، لم يعد العطل':'فشل، عاد العطل',demoVirtual:true});
+  db.records.push({id:'NTEST'+(i+1),wheelId:n.id,date:new Date(Date.UTC(2026,8,1+i)).toISOString().slice(0,10),km,part,number:'NIS-'+String(i+1).padStart(3,'0'),fault,severity,driverBehavior:'متوسط',action,cost:outcome==='success'?250:180,notes:'بيانات تجريبية لاختبار التحليل فقط',outcome,followDays:30,partAgeKm:1000+i*300,partFailures:rows.slice(0,i).filter(x=>x[0]===part).length,kmSinceService:1000+i*300,hours:2800,result:outcome==='success'?'ناجح، لم يعد العطل':'فشل، عاد العطل',demoVirtual:true});
   let po=db.parts.find(x=>x.wheelId===n.id&&x.name===part);
   if(!po){po={id:'NPART-'+i,wheelId:n.id,name:part,number:'NIS-P-'+String(i+1).padStart(3,'0'),install:'2026-09-01',failures:0,status:'مركب'};db.parts.push(po)}
   po.failures++;
@@ -1532,5 +1506,6 @@ function openDemoTest(){
 }
 
 renderPicker();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));}
 </script>
 </body></html>
