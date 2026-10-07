@@ -568,6 +568,9 @@ onclick="toggleAddWheel()">＋ إضافة عجلة جديدة</button>
     <button type="button" class="btn" style="background:#8a5fb5;color:white;width:100%;padding:14px;font-size:17px" onclick="openDemoTest()">تشغيل الاختبار التجريبي</button>
   </div>
 </div>
+<div style="max-width:650px;margin:18px auto 0">
+  <button id="installPWA" type="button" class="btn primary open-wheel-btn" style="display:none" onclick="installPWA()">📲 تثبيت البرنامج على الهاتف</button>
+</div>
 </section>
 
 <!-- النسخ الاحتياطي والنقل بين الهاتف والحاسبة -->
@@ -580,6 +583,7 @@ onclick="toggleAddWheel()">＋ إضافة عجلة جديدة</button>
       <button type="button" class="btn" style="background:#1769aa;color:white" onclick="document.getElementById('importDataFile').click()">⬆️ استيراد البيانات</button>
     </div>
     <input id="importDataFile" type="file" accept="application/json,.json" style="display:none" onchange="importProductionData(event)">
+    <button type="button" class="btn" style="margin-top:10px;background:#8b1e1e;color:white;width:100%;padding:13px;font-size:16px" onclick="resetProductionDatabase()">🗑️ إعادة ضبط قاعدة البيانات</button>
   </div>
 </div>
 
@@ -634,6 +638,24 @@ function exportProductionData(){
  document.body.appendChild(a); a.click(); a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+function resetProductionDatabase(){
+ if(demoMode){ alert('اخرج من الاختبار التجريبي أولاً ثم أعد ضبط قاعدة البيانات.'); return; }
+ const ok=confirm('سيتم حذف جميع بيانات العجلات وسجلات الصيانة والأعطال من هذا الجهاز، ثم إنشاء عجلة 1 جديدة بدون سجلات. هل تريد المتابعة؟');
+ if(!ok)return;
+ localStorage.removeItem(KEY);
+ db={
+  wheels:[{id:'W001',name:'العجلة 1',wheelNumber:'W001',driverBehavior:'غير مسجل',type:'',model:'',engine:'ديزل',km:0,hours:0,status:'تعمل'}],
+  records:[],
+  parts:[]
+ };
+ selected=null;
+ save();
+ document.getElementById('wheelScreen')?.classList.remove('active');
+ document.getElementById('picker')?.classList.add('active');
+ renderPicker();
+ alert('تمت إعادة ضبط قاعدة البيانات. بقيت العجلة 1 فقط بدون سجلات.');
+}
+
 function importProductionData(event){
  if(demoMode){ alert('اخرج من الاختبار التجريبي أولاً ثم استورد البيانات.'); event.target.value=''; return; }
  const file=event.target.files?.[0];
@@ -1440,7 +1462,7 @@ function openDemoTest(){
  productionDb=db;
  demoMode=true;
  db={wheels:[],records:[],parts:[]};
- const n={id:'VIRTUAL-DEMO',name:'عجلة افتراضية',wheelNumber:'VIRTUAL-DEMO',driverName:'سائق تجريبي',driverBehavior:'متوسط',type:'افتراضي',model:'افتراضي',engine:'Diesel',km:60000,hours:2800,status:'تعمل',hiddenDemo:true};
+ const n={id:'VIRTUAL-DEMO',name:'عجلة افتراضية',wheelNumber:'VIRTUAL-DEMO',driverName:'سائق تجريبي',driverBehavior:'متوسط',type:'افتراضي',model:'افتراضي',engine:'Diesel',km:77950,hours:2800,status:'تعمل',hiddenDemo:true};
  db.wheels.push(n);
  const rows=[
   ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "استبدال", "success"],
@@ -1505,6 +1527,31 @@ function openDemoTest(){
  selected=n.id;
  openWheel(n.id);
  showDemoModal();
+}
+
+// ===== تثبيت البرنامج كتطبيق PWA =====
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+ e.preventDefault();
+ deferredInstallPrompt=e;
+ const b=document.getElementById('installPWA');
+ if(b)b.style.display='block';
+});
+window.addEventListener('appinstalled',()=>{
+ deferredInstallPrompt=null;
+ const b=document.getElementById('installPWA');
+ if(b)b.style.display='none';
+});
+async function installPWA(){
+ if(deferredInstallPrompt){
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  const b=document.getElementById('installPWA');
+  if(b)b.style.display='none';
+  return;
+ }
+ alert('إذا لم يظهر خيار التثبيت، افتح الموقع من Chrome مباشرة وتأكد من اتصال الإنترنت أول مرة، ثم أعد فتح القائمة.');
 }
 
 renderPicker();
