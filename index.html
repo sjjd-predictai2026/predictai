@@ -555,9 +555,7 @@ onclick="toggleAddWheel()">＋ إضافة عجلة جديدة</button>
 <div><label>اسم العجلة</label><input id="newWheelName" placeholder="مثال: عجلة 2"></div>
 <div><label>رقم العجلة</label><input id="newWheelNumber" placeholder="مثال: 25-12345"></div>
 
-<div><label>سلوك السائق</label><select id="newDriverBehavior"><option value="هادئ">هادئ</option><option value="متوسط" selected>متوسط</option><option value="قاسٍ">قاسٍ</option><option value="متنوع">متنوع</option></select></div>
 <div><label>نوع الوقود</label><select id="newWheelEngine"><option value="ديزل">ديزل</option><option value="بنزين">بنزين</option></select></div>
-<div><label>الكيلومترات</label><input id="newWheelKm" type="number" value="0"></div>
 </div>
 <button class="btn primary" style="margin-top:14px;width:100%" onclick="addWheelFromForm()">+ حفظ العجلة</button>
 </div>
@@ -760,6 +758,7 @@ function renderWheel(){
  <div><label>التاريخ</label><input id="rdate" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
  <div><label>الكيلومترات</label><input id="rkm" type="number" value="${esc(w.km)}"></div>
  <div><label>اسم السائق وقت حدوث العطل / الصيانة</label><input id="rdriverName" placeholder="اسم السائق"></div>
+ <div><label>سلوك السائق</label><select id="rdriverBehavior"><option value="هادئ">هادئ</option><option value="متوسط" selected>متوسط</option><option value="قاسٍ">قاسٍ</option><option value="متنوع">متنوع</option><option value="غير معروف">غير معروف</option></select></div>
  <div><label>الجزء</label><input id="rpart" placeholder="مثال: مضخة الوقود"></div>
  <div><label>رقم الجزء</label><input id="rnumber" placeholder="اختياري"></div>
  <div><label>نوع العطل</label><input id="rfault" placeholder="مثال: تسريب، كسر، ضعف"></div>
@@ -790,12 +789,12 @@ function renderWheel(){
 function addWheelFromForm(){
  const name=document.getElementById('newWheelName').value.trim();
  const wheelNumber=document.getElementById('newWheelNumber').value.trim();
-  const driverName=document.getElementById('newDriverName').value.trim();
- const driverBehavior=document.getElementById('newDriverBehavior').value;
+  const driverName='';
+ const driverBehavior='غير مسجل';
  const type='';
  const model='';
  const engine=document.getElementById('newWheelEngine').value;
- const km=Number(document.getElementById('newWheelKm').value)||0;
+ const km=0;
  if(!name)return alert('أدخل اسم العجلة');
  if(!wheelNumber)return alert('أدخل رقم العجلة');
  if(db.wheels.some(x=>x.wheelNumber===wheelNumber||x.id===wheelNumber))return alert('رقم العجلة موجود مسبقاً');
@@ -805,9 +804,7 @@ function addWheelFromForm(){
  document.getElementById('newWheelName').value='';
  document.getElementById('newWheelNumber').value='';
  document.getElementById('newDriverName').value='';
-  document.getElementById('newDriverBehavior').value='متوسط';
- document.getElementById('newWheelKm').value='0';
- renderPicker();
+    renderPicker();
  const picker=document.getElementById('wheelSelect');
  if(picker) picker.value=id;
  previewWheel();
@@ -846,7 +843,7 @@ function addRecord(){
  }
  db.records.push({id:'R'+Date.now(),wheelId:selected,date,km,part,
  number:document.getElementById('rnumber').value,fault:document.getElementById('rfault').value,
- severity:document.getElementById('rseverity').value,driverName:document.getElementById('rdriverName').value.trim(),driverBehavior:w.driverBehavior||'غير مسجل',
+ severity:document.getElementById('rseverity').value,driverName:document.getElementById('rdriverName').value.trim(),driverBehavior:document.getElementById('rdriverBehavior').value,
  maintType:document.getElementById('rmaintType').value,
  symptoms:document.getElementById('rsymptoms').value,
  reason:document.getElementById('rreason').value,
