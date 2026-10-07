@@ -1,4 +1,4 @@
-const CACHE_NAME = "maintenance-decision-v4";
+const CACHE_NAME = "maintenance-decision-v7";
 const ASSETS = [
   "./",
   "./index.html",

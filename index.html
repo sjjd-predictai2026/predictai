@@ -803,7 +803,6 @@ function addWheelFromForm(){
  save();
  document.getElementById('newWheelName').value='';
  document.getElementById('newWheelNumber').value='';
- document.getElementById('newDriverName').value='';
     renderPicker();
  const picker=document.getElementById('wheelSelect');
  if(picker) picker.value=id;
@@ -954,7 +953,7 @@ function nearestCases(current,limit=5){
  const rows=allCompletedRecords().map(r=>({r,x:rfFeatures(r)}));
  if(!rows.length)return [];
  const cx=rfFeatures(current);
- const scale=[100000,3,6,20,80,100000,10,100000,10000,1,1,1];
+ const scale=[100000,3,6,20,80,100000,10,100000,10000,100000,10,10,1,1,1];
  return rows.map(o=>{let d=0;for(let i=0;i<cx.length;i++){const z=(cx[i]-o.x[i])/(scale[i]||1);d+=z*z}return {...o,d:Math.sqrt(d)}}).sort((a,b)=>a.d-b.d).slice(0,limit);
 }
 function renderLearningPanel(){
@@ -1038,9 +1037,12 @@ function runAI(){
  const calc=action=>{const m=actionModel(action);if(!m.forest)return {p:null,n:m.rows.length};return {p:rfPredict(m.forest,rfFeatures(current)),n:m.rows.length}};
  const rep=calc('إصلاح'), repl=calc('استبدال');
  const near=nearestCases(current,5);
- let msg=`<div class="notice"><h3 style="margin-top:0">نتيجة النموذج</h3><p>احتمال نجاح الإصلاح: <b>${fmt(rep)}</b>، عينات مكتملة: ${rep.n}</p><p>احتمال نجاح الاستبدال: <b>${fmt(repl)}</b>، عينات مكتملة: ${repl.n}</p>`;
- if(rep.p!=null&&repl.p!=null)msg+=`<p>الفارق بين التقديرين: <b>${Math.round(Math.abs(rep.p-repl.p)*100)} نقطة مئوية</b>.</p>`;
+ const historical=(action)=>{const rs=completedRecords().filter(r=>r.action===action);const ok=rs.filter(r=>r.outcome==='success').length;return {n:rs.length,ok,rate:rs.length?Math.round(ok/rs.length*100):null};};
+ const hRep=historical('إصلاح'), hRepl=historical('استبدال');
+ let msg=`<div class="notice"><h3 style="margin-top:0">تقدير نموذج الذكاء الاصطناعي</h3><p>احتمال نجاح الإصلاح: <b>${fmt(rep)}</b>، عينات مكتملة استخدمها النموذج: ${rep.n}</p><p>احتمال نجاح الاستبدال: <b>${fmt(repl)}</b>، عينات مكتملة استخدمها النموذج: ${repl.n}</p>`;
+ if(rep.p!=null&&repl.p!=null){const diff=Math.abs(Math.round(rep.p*100)-Math.round(repl.p*100));msg+=`<p>الفارق بين تقديري النموذج: <b>${diff} نقطة مئوية</b>.</p>`;}
  else msg+=`<p>تحتاج كل طريقة إلى 10 حالات مكتملة على الأقل حتى يبدأ نموذج Random Forest بإعطاء تقدير.</p>`;
+ msg+=`<hr style="border:0;border-top:1px solid #dbe6ee;margin:14px 0"><h4>النتيجة التاريخية المسجلة</h4><p>الإصلاح: <b>${hRep.rate==null?'غير متاح':hRep.rate+'%'}</b> من ${hRep.n} حالة مكتملة، والاستبدال: <b>${hRepl.rate==null?'غير متاح':hRepl.rate+'%'}</b> من ${hRepl.n} حالة مكتملة.</p><p class="muted">النسب التاريخية تصف السجل الفعلي فقط، ولا تمثل دقة نموذج الذكاء الاصطناعي.</p>`;
  if(near.length)msg+=`<h4>أقرب الحالات التاريخية</h4><ul>${near.map(o=>`<li>${esc(o.r.part)}، ${esc(o.r.fault||'-')}، ${esc(o.r.action)}، النتيجة: ${o.r.outcome==='success'?'نجاح':'فشل'}</li>`).join('')}</ul>`;
  msg+='</div>';document.getElementById('aiResult').innerHTML=msg;
 }
@@ -1258,13 +1260,13 @@ function driverHistoryHTML(){
 }
 function advancedAnalysis(){
  const a=repairReplacementSummary(),life=partLifeSummary(),h=wheelHealthScore(),er=evaluateAction('إصلاح'),ex=evaluateAction('استبدال');
- const metric=(name,m)=>m.ready?'<div class="notice"><b>'+name+'</b>: Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%، تدريب '+m.train+'، اختبار '+m.test+'.</div>':'<div class="notice"><b>'+name+'</b>: التقييم غير متاح بعد، يلزم 20 حالة مكتملة على الأقل.</div>';
+ const metric=(name,m)=>m.ready?'<div class="notice"><b>'+name+'</b>: Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%، تدريب '+m.train+'، اختبار '+m.test+'.</div>':'<div class="notice"><b>'+name+'</b>: التقييم غير متاح بعد، يلزم 20 حالة مكتملة على الأقل لكل إجراء.</div>';
  const lifeHtml=life.length?'<div class="table-wrap"><table><thead><tr><th>الجزء</th><th>مرات العطل</th><th>متوسط المسافة بين الأعطال</th></tr></thead><tbody>'+life.slice(0,12).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice">لا توجد بيانات كافية.</div>';
  return '<div class="grid"><div class="box"><h3>حالة العجلة</h3><div style="font-size:36px;font-weight:800">'+h+'%</div><p><b>'+healthLabel(h)+'</b></p><p>الأعطال: '+logs().filter(x=>x.fault).length+'، السجلات: '+logs().length+'</p></div><div class="box"><h3>التعلم المستمر</h3><p>البيانات الفعلية للعجلة هي مصدر التعلم.</p><p>البيانات التجريبية لا تدخل في قاعدة الإنتاج.</p></div></div>'+ 
  '<div class="box" style="margin-top:12px"><h3>🔧 الإصلاح مقابل الاستبدال</h3><div class="table-wrap"><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table></div><p><b>الاستنتاج:</b> '+a.conclusion+'</p><p class="muted">الاستنتاج خاص بالسجل المتوفر للعجلة.</p></div>'+ 
  '<div class="box" style="margin-top:12px"><h3>📏 عمر الأجزاء</h3>'+lifeHtml+'</div>'+ 
  '<div class="box" style="margin-top:12px"><h3>👤 تاريخ السائقين</h3>'+driverHistoryHTML()+'</div>'+ 
- '<div class="box" style="margin-top:12px"><h3>🧪 التقييم العلمي</h3>'+metric('الإصلاح',er)+metric('الاستبدال',ex)+'<p class="muted">التقسيم زمني، 80% أقدم للتدريب و20% أحدث للاختبار.</p></div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>🧪 التقييم الوظيفي للنموذج</h3>'+metric('الإصلاح',er)+metric('الاستبدال',ex)+'<p class="muted">التقسيم زمني: 80% من الحالات الأقدم للتدريب و20% من الحالات الأحدث للاختبار. هذا تقييم وظيفي أولي وليس إثباتاً نهائياً للدقة الميدانية.</p></div>'+ 
  '<div class="box" style="margin-top:12px"><h3>🔮 التنبؤ بالعطل القادم</h3>'+nextFaultPredictionHTML()+'</div>';
 }
 function renderAdvanced(){const b=document.getElementById('advanced');if(b)b.innerHTML='<div class="box"><h2>📊 التحليل المتقدم</h2>'+advancedAnalysis()+'</div>';}
@@ -1273,12 +1275,12 @@ function printReport(){
  const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة.');return;}
  const rows=life.slice(0,15).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('');
  const metric=m=>m.ready?'Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%':'غير متاح بعد';
- win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#173247}table{width:100%;border-collapse:collapse;margin:12px 0 22px}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}.box{border:1px solid #ddd;padding:12px;margin:10px 0}</style></head><body><h1>نموذج لدعم قرار الصيانة</h1><div class="box">العجلة: <b>'+esc(w.name)+'</b><br>رقم العجلة: '+esc(w.wheelNumber||w.id)+'<br>السائق: '+esc(w.driverName||'غير مسجل')+'<br>مؤشر الحالة: <b>'+h+'%</b>، '+healthLabel(h)+'</div><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+rows+'</table><h2>التقييم العلمي</h2><p>الإصلاح: '+metric(er)+'</p><p>الاستبدال: '+metric(ex)+'</p><p>البيانات التجريبية الاصطناعية منفصلة عن بيانات الإنتاج.</p><p>تاريخ التقرير: '+new Date().toLocaleString('ar-IQ')+'</p></body></html>');
+ win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#173247}table{width:100%;border-collapse:collapse;margin:12px 0 22px}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}.box{border:1px solid #ddd;padding:12px;margin:10px 0}</style></head><body><h1>نموذج لدعم قرار الصيانة</h1><div class="box">العجلة: <b>'+esc(w.name)+'</b><br>رقم العجلة: '+esc(w.wheelNumber||w.id)+'<br>السائق: '+esc(w.driverName||'غير مسجل')+'<br>مؤشر الحالة: <b>'+h+'%</b>، '+healthLabel(h)+'</div><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+rows+'</table><h2>التقييم الوظيفي للنموذج</h2><p>الإصلاح: '+metric(er)+'</p><p>الاستبدال: '+metric(ex)+'</p><p>البيانات التجريبية الاصطناعية منفصلة عن بيانات الإنتاج. لا تُستخدم هذه الحالات لإثبات الدقة الميدانية.</p><p>تاريخ التقرير: '+new Date().toLocaleString('ar-IQ')+'</p></body></html>');
  win.document.close();setTimeout(()=>win.print(),500);
 }
 function renderReport(){const b=document.getElementById('report');if(b)b.innerHTML='<div class="box"><h2>📄 التقرير الاحترافي</h2><div class="notice">يمكن حفظ التقرير كـ PDF من نافذة الطباعة.</div><button class="btn primary" onclick="printReport()">🖨️ إنشاء التقرير</button></div>';}
 
-// ===== نموذج تعلم آلي محلي: Random Forest =====
+// ===== نموذج تعلم آلي محلي: Random Forest بمعاينة عشوائية للخصائص =====
 function rfFeatures(r){
  const sev={'بسيط':1,'متوسط':2,'شديد':3};
  const drv={'طبيعي':0,'هادئ':0,'متوسط':1,'قيادة قاسية':2,'سرعة عالية':3,'تسارع وكبح متكرر':4,'تشغيل طويل':5,'متنوع':6,'غير معروف':-1,'غير مسجل':-1};
@@ -1296,7 +1298,6 @@ function rfFeatures(r){
    Number(r.partAgeDays)||0,
    Number(r.partRepairs)||0,
    Number(r.partReplacements)||0,
-   Number(r.kmToOutcome)||0,
    hashText(r.vehicleType||r.type||''),
    hashText(r.vehicleModel||r.model||''),
    hashText(r.engine||'')
@@ -1325,8 +1326,11 @@ function rfLeaf(rows){
 function rfBestSplit(rows, features, minLeaf, rnd){
  let best=null, parent=rfGini(rows);
  if(parent===0)return null;
+ // Random Forest: evaluate a random subset of features at every split.
  const shuffled=[...features].sort(()=>rnd()-.5);
- for(const f of shuffled){
+ const mtry=Math.max(1,Math.floor(Math.sqrt(features.length)));
+ const candidates=shuffled.slice(0,mtry);
+ for(const f of candidates){
    const vals=[...new Set(rows.map(r=>r.x[f]))].sort((a,b)=>a-b);
    if(vals.length<2)continue;
    // limit candidate thresholds for stability on larger datasets
@@ -1373,7 +1377,7 @@ function rfPredictTree(tree,x){
 
 function trainRandomForest(rows, trees=60){
  if(rows.length<10)return null;
- const features=Array.from({length:16},(_,i)=>i);
+ const features=Array.from({length:15},(_,i)=>i);
  const seed={v:2166136261};
  const rnd=rfRand(seed);
  const forest=[];
