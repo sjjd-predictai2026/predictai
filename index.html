@@ -1278,7 +1278,7 @@ function nextFaultPredictionHTML(){
 function driverHistoryHTML(){
  const w=wheel(),map={};logs().forEach(r=>{const d=String(r.driverName||w.driverName||'غير مسجل').trim()||'غير مسجل';if(!map[d])map[d]={events:0,faults:0,success:0,failure:0};map[d].events++;if(r.fault)map[d].faults++;if(r.outcome==='success')map[d].success++;if(r.outcome==='failure')map[d].failure++;});
  const rows=Object.entries(map).sort((a,b)=>b[1].events-a[1].events);
- return rows.length?'<div class="table-wrap"><table><thead><tr><th>السائق</th><th>الأحداث</th><th>الأعطال</th><th>نجاح</th><th>فشل</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+x[1].events+'</td><td>'+x[1].faults+'</td><td>'+x[1].success+'</td><td>'+x[1].failure+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice">لا توجد بيانات سائق كافية.</div>';
+ return rows.length?'<div class="table-wrap"><table><thead><tr><th>السائق</th><th>الأحداث</th><th>الأعطال</th><th>نسبة الأعطال</th><th>نجاح الصيانة</th><th>فشل الصيانة</th><th>معدل الفشل</th></tr></thead><tbody>'+rows.map(x=>{const v=x[1],completed=v.success+v.failure,faultRate=v.events?Math.round(v.faults/v.events*100):0,failRate=completed?Math.round(v.failure/completed*100):0,successRate=completed?Math.round(v.success/completed*100):null;return '<tr><td>'+esc(x[0])+'</td><td>'+v.events+'</td><td>'+v.faults+'</td><td>'+faultRate+'%</td><td>'+v.success+(successRate!==null?' ('+successRate+'%)':'')+'</td><td>'+v.failure+'</td><td>'+(completed?failRate+'%':'غير متاح')+'</td></tr>';}).join('')+'</tbody></table></div><p class="muted">نسبة الأعطال = الأعطال ÷ الأحداث. معدل الفشل = حالات الفشل ÷ نتائج المتابعة المكتملة (نجاح + فشل). هذه مؤشرات وصفية ولا تثبت أن السائق سبب العطل.</p>':'<div class="notice">لا توجد بيانات سائق كافية.</div>';
 }
 function advancedAnalysis(){
  const a=repairReplacementSummary(),life=partLifeSummary(),h=wheelHealthScore(),er=evaluateAction('إصلاح'),ex=evaluateAction('استبدال');
@@ -1286,9 +1286,9 @@ function advancedAnalysis(){
  const lifeHtml=life.length?'<div class="table-wrap"><table><thead><tr><th>الجزء</th><th>مرات العطل</th><th>متوسط المسافة بين الأعطال</th></tr></thead><tbody>'+life.slice(0,12).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice">لا توجد بيانات كافية.</div>';
  return '<div class="grid"><div class="box"><h3>حالة العجلة</h3><div style="font-size:36px;font-weight:800">'+h+'%</div><p><b>'+healthLabel(h)+'</b></p><p>الأعطال: '+logs().filter(x=>x.fault).length+'، السجلات: '+logs().length+'</p></div><div class="box"><h3>التعلم المستمر</h3><p>البيانات الفعلية للعجلة هي مصدر التعلم.</p><p>البيانات التجريبية لا تدخل في قاعدة الإنتاج.</p></div></div>'+ 
  '<div class="box" style="margin-top:12px"><h3>🔧 الإصلاح مقابل الاستبدال</h3><div class="table-wrap"><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table></div><p><b>الاستنتاج:</b> '+a.conclusion+'</p><p class="muted">الاستنتاج خاص بالسجل المتوفر للعجلة.</p></div>'+ 
- '<div class="box" style="margin-top:12px"><h3>📏 عمر الأجزاء</h3>'+lifeHtml+'</div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>📏 متوسط المسافة بين الأعطال</h3>'+lifeHtml+'</div>'+ 
  '<div class="box" style="margin-top:12px"><h3>👤 تاريخ السائقين</h3>'+driverHistoryHTML()+'</div>'+ 
- '<div class="box" style="margin-top:12px"><h3>🧪 التقييم الوظيفي للنموذج</h3>'+metric('الإصلاح',er)+metric('الاستبدال',ex)+'<p class="muted">التقسيم زمني: 80% من الحالات الأقدم للتدريب و20% من الحالات الأحدث للاختبار. هذا تقييم وظيفي أولي وليس إثباتاً نهائياً للدقة الميدانية.</p></div>'+ 
+ '<div class="box" style="margin-top:12px"><h3>🧪 التقييم الوظيفي للنموذج</h3>'+metric('الإصلاح',er)+metric('الاستبدال',ex)+'<p class="muted">التقسيم زمني: 80% من الحالات الأقدم للتدريب و20% من الحالات الأحدث للاختبار. الاختبار الحالي يستخدم 120 حالة اصطناعية متنوعة، وليس بيانات ميدانية. هذا تقييم وظيفي أولي وليس إثباتاً نهائياً للدقة الميدانية.</p></div>'+ 
  '<div class="box" style="margin-top:12px"><h3>🔮 التنبؤ بالعطل القادم</h3>'+nextFaultPredictionHTML()+'</div>';
 }
 function renderAdvanced(){const b=document.getElementById('advanced');if(b)b.innerHTML='<div class="box"><h2>📊 التحليل المتقدم</h2>'+advancedAnalysis()+'</div>';}
@@ -1297,7 +1297,7 @@ function printReport(){
  const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة.');return;}
  const rows=life.slice(0,15).map(x=>'<tr><td>'+esc(x.part)+'</td><td>'+x.failures+'</td><td>'+(x.avgKm?x.avgKm.toLocaleString()+' كم':'غير كافٍ')+'</td></tr>').join('');
  const metric=m=>m.ready?'Accuracy '+Math.round(m.accuracy*100)+'%، Precision '+Math.round(m.precision*100)+'%، Recall '+Math.round(m.recall*100)+'%، F1 '+Math.round(m.f1*100)+'%':'غير متاح بعد';
- win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#173247}table{width:100%;border-collapse:collapse;margin:12px 0 22px}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}.box{border:1px solid #ddd;padding:12px;margin:10px 0}</style></head><body><h1>نموذج لدعم قرار الصيانة</h1><div class="box">العجلة: <b>'+esc(w.name)+'</b><br>رقم العجلة: '+esc(w.wheelNumber||w.id)+'<br>السائق: '+esc(w.driverName||'غير مسجل')+'<br>مؤشر الحالة: <b>'+h+'%</b>، '+healthLabel(h)+'</div><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table><h2>عمر الأجزاء</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+rows+'</table><h2>التقييم الوظيفي للنموذج</h2><p>الإصلاح: '+metric(er)+'</p><p>الاستبدال: '+metric(ex)+'</p><p>البيانات التجريبية الاصطناعية منفصلة عن بيانات الإنتاج. لا تُستخدم هذه الحالات لإثبات الدقة الميدانية.</p><p>تاريخ التقرير: '+new Date().toLocaleString('ar-IQ')+'</p></body></html>');
+ win.document.write('<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نموذج لدعم قرار الصيانة</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#173247}table{width:100%;border-collapse:collapse;margin:12px 0 22px}th,td{border:1px solid #bbb;padding:8px;text-align:right}th{background:#eef4f7}.box{border:1px solid #ddd;padding:12px;margin:10px 0}</style></head><body><h1>نموذج لدعم قرار الصيانة</h1><div class="box">العجلة: <b>'+esc(w.name)+'</b><br>رقم العجلة: '+esc(w.wheelNumber||w.id)+'<br>السائق: '+esc(w.driverName||'غير مسجل')+'<br>مؤشر الحالة: <b>'+h+'%</b>، '+healthLabel(h)+'</div><h2>الإصلاح والاستبدال</h2><table><tr><th>الإجراء</th><th>الحالات</th><th>نجاح</th><th>فشل</th><th>نسبة النجاح</th></tr><tr><td>إصلاح</td><td>'+a.repair.n+'</td><td>'+a.repair.success+'</td><td>'+a.repair.failure+'</td><td>'+a.repair.rate+'%</td></tr><tr><td>استبدال</td><td>'+a.replace.n+'</td><td>'+a.replace.success+'</td><td>'+a.replace.failure+'</td><td>'+a.replace.rate+'%</td></tr></table><h2>متوسط المسافة بين الأعطال</h2><table><tr><th>الجزء</th><th>الأعطال</th><th>متوسط المسافة</th></tr>'+rows+'</table><h2>التقييم الوظيفي للنموذج</h2><p>الإصلاح: '+metric(er)+'</p><p>الاستبدال: '+metric(ex)+'</p><p>البيانات التجريبية الاصطناعية منفصلة عن بيانات الإنتاج. لا تُستخدم هذه الحالات لإثبات الدقة الميدانية.</p><p>تاريخ التقرير: '+new Date().toLocaleString('ar-IQ')+'</p></body></html>');
  win.document.close();setTimeout(()=>win.print(),500);
 }
 function renderReport(){const b=document.getElementById('report');if(b)b.innerHTML='<div class="box"><h2>📄 التقرير الاحترافي</h2><div class="notice">يمكن حفظ التقرير كـ PDF من نافذة الطباعة.</div><button class="btn primary" onclick="printReport()">🖨️ إنشاء التقرير</button></div>';}
@@ -1308,24 +1308,13 @@ function rfFeatures(r){
  const drv={'طبيعي':0,'هادئ':0,'متوسط':1,'قيادة قاسية':2,'سرعة عالية':3,'تسارع وكبح متكرر':4,'تشغيل طويل':5,'متنوع':6,'غير معروف':-1,'غير مسجل':-1};
  const hashText=v=>{let h=2166136261;for(const ch of String(v||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0)%1000/1000};
  return [
-   Number(r.km)||0,
-   sev[r.severity] ?? 0,
-   drv[r.driverBehavior] ?? -1,
-   String(r.part||'').length,
-   String(r.fault||'').length,
-   Number(r.partAgeKm)||0,
-   Number(r.partFailures)||0,
-   Number(r.kmSinceService)||0,
-   Number(r.hours)||0,
-   Number(r.partAgeDays)||0,
-   Number(r.partRepairs)||0,
-   Number(r.partReplacements)||0,
-   hashText(r.vehicleType||r.type||''),
-   hashText(r.vehicleModel||r.model||''),
-   hashText(r.engine||'')
+   Number(r.km)||0, sev[r.severity] ?? 0, drv[r.driverBehavior] ?? -1,
+   hashText(r.part||''), hashText(r.fault||''), Number(r.partAgeKm)||0,
+   Number(r.partFailures)||0, Number(r.kmSinceService)||0, Number(r.hours)||0,
+   Number(r.partAgeDays)||0, Number(r.partRepairs)||0, Number(r.partReplacements)||0,
+   hashText(r.vehicleType||r.type||''), hashText(r.vehicleModel||r.model||''), hashText(r.engine||'')
  ];
 }
-
 function rfRand(seedObj){
  let x=seedObj.v>>>0;
  return function(){
@@ -1444,8 +1433,8 @@ function showDemoModal(){
  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
  m.innerHTML=`<div style="width:min(460px,100%);background:linear-gradient(135deg,#eaf5ff,#d7ecff);border:1px solid #b9d8f2;border-radius:22px;padding:28px 24px;box-shadow:0 18px 55px rgba(0,0,0,.22);text-align:center;">
    <div style="font-weight:800;font-size:18px;line-height:1.9;color:#163b57;">
-     تم تحميل الاختبار التجريبي بـ50 حالة اصطناعية لعجلة افتراضية.<br>
-     البيانات منفصلة ولا تُحفظ ضمن بيانات العجلات الأصلية.
+     تم تحميل الاختبار التجريبي بـ120 حالة اصطناعية متنوعة لعجلة افتراضية.<br>
+     البيانات منفصلة ولا تُحفظ ضمن بيانات العجلات الأصلية. تشمل 50 إصلاح، 50 استبدال، و20 فحص فقط.
    </div>
    <button onclick="document.getElementById('demoModal')?.remove()" style="margin-top:22px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:11px 34px;font-size:16px;font-weight:800;cursor:pointer;">حسناً</button>
  </div>`;
@@ -1454,79 +1443,70 @@ function showDemoModal(){
 }
 
 function openDemoTest(){
- if(demoMode){
-  selected='VIRTUAL-DEMO';
-  openWheel(selected);
-  return;
- }
- productionDb=db;
- demoMode=true;
- db={wheels:[],records:[],parts:[]};
- const n={id:'VIRTUAL-DEMO',name:'عجلة افتراضية',wheelNumber:'VIRTUAL-DEMO',driverName:'سائق تجريبي',driverBehavior:'متوسط',type:'افتراضي',model:'افتراضي',engine:'Diesel',km:77950,hours:2800,status:'تعمل',hiddenDemo:true};
+ if(demoMode){ selected='VIRTUAL-DEMO'; openWheel(selected); return; }
+ productionDb=db; demoMode=true; db={wheels:[],records:[],parts:[]};
+ const n={id:'VIRTUAL-DEMO',name:'عجلة افتراضية',wheelNumber:'VIRTUAL-DEMO',driverName:'بيانات تجريبية',driverBehavior:'متنوع',type:'ديزل',model:'نموذج تجريبي',engine:'Diesel',km:48000,hours:1200,status:'تعمل',hiddenDemo:true};
  db.wheels.push(n);
- const rows=[
-  ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "استبدال", "success"],
-  ["بخاخات الوقود", "رش غير منتظم وضعف عزم", "متوسط", "استبدال", "success"],
-  ["مضخة الوقود", "ضعف ضغط الوقود", "شديد", "استبدال", "success"],
-  ["فلتر الهواء", "انسداد وارتفاع استهلاك الوقود", "بسيط", "استبدال", "success"],
-  ["منظومة التبريد", "ارتفاع حرارة المحرك", "شديد", "استبدال", "success"],
-  ["ثرموستات", "تعليق وارتفاع حرارة", "متوسط", "استبدال", "success"],
-  ["سير الملحقات", "صفير واهتزاز", "بسيط", "استبدال", "success"],
-  ["بطارية التشغيل", "ضعف التشغيل صباحاً", "متوسط", "استبدال", "failure"],
-  ["مضخة الماء", "تسريب سائل تبريد", "شديد", "استبدال", "success"],
-  ["زيت المحرك", "انخفاض مستوى الزيت", "متوسط", "استبدال", "success"],
-  ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "استبدال", "success"],
-  ["بخاخات الوقود", "رش غير منتظم وضعف عزم", "متوسط", "استبدال", "success"],
-  ["مضخة الوقود", "ضعف ضغط الوقود", "شديد", "استبدال", "success"],
-  ["فلتر الهواء", "انسداد وارتفاع استهلاك الوقود", "بسيط", "استبدال", "success"],
-  ["منظومة التبريد", "ارتفاع حرارة المحرك", "شديد", "استبدال", "success"],
-  ["ثرموستات", "تعليق وارتفاع حرارة", "متوسط", "استبدال", "success"],
-  ["سير الملحقات", "صفير واهتزاز", "بسيط", "استبدال", "failure"],
-  ["بطارية التشغيل", "ضعف التشغيل صباحاً", "متوسط", "استبدال", "success"],
-  ["مضخة الماء", "تسريب سائل تبريد", "شديد", "استبدال", "success"],
-  ["زيت المحرك", "انخفاض مستوى الزيت", "متوسط", "استبدال", "success"],
-  ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "إصلاح", "failure"],
-  ["بخاخات الوقود", "رش غير منتظم وضعف عزم", "متوسط", "إصلاح", "success"],
-  ["مضخة الوقود", "ضعف ضغط الوقود", "شديد", "إصلاح", "success"],
-  ["فلتر الهواء", "انسداد وارتفاع استهلاك الوقود", "بسيط", "إصلاح", "failure"],
-  ["منظومة التبريد", "ارتفاع حرارة المحرك", "شديد", "إصلاح", "success"],
-  ["ثرموستات", "تعليق وارتفاع حرارة", "متوسط", "إصلاح", "success"],
-  ["سير الملحقات", "صفير واهتزاز", "بسيط", "إصلاح", "success"],
-  ["بطارية التشغيل", "ضعف التشغيل صباحاً", "متوسط", "إصلاح", "failure"],
-  ["مضخة الماء", "تسريب سائل تبريد", "شديد", "إصلاح", "success"],
-  ["زيت المحرك", "انخفاض مستوى الزيت", "متوسط", "إصلاح", "success"],
-  ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "إصلاح", "success"],
-  ["بخاخات الوقود", "رش غير منتظم وضعف عزم", "متوسط", "إصلاح", "failure"],
-  ["مضخة الوقود", "ضعف ضغط الوقود", "شديد", "إصلاح", "success"],
-  ["فلتر الهواء", "انسداد وارتفاع استهلاك الوقود", "بسيط", "إصلاح", "success"],
-  ["منظومة التبريد", "ارتفاع حرارة المحرك", "شديد", "إصلاح", "failure"],
-  ["ثرموستات", "تعليق وارتفاع حرارة", "متوسط", "إصلاح", "success"],
-  ["سير الملحقات", "صفير واهتزاز", "بسيط", "إصلاح", "failure"],
-  ["بطارية التشغيل", "ضعف التشغيل صباحاً", "متوسط", "إصلاح", "success"],
-  ["مضخة الماء", "تسريب سائل تبريد", "شديد", "إصلاح", "failure"],
-  ["زيت المحرك", "انخفاض مستوى الزيت", "متوسط", "إصلاح", "failure"],
-  ["فلتر الوقود", "انسداد وضعف تدفق الوقود", "متوسط", "فحص فقط", "success"],
-  ["بخاخات الوقود", "رش غير منتظم وضعف عزم", "متوسط", "فحص فقط", "success"],
-  ["مضخة الوقود", "ضعف ضغط الوقود", "شديد", "فحص فقط", "success"],
-  ["فلتر الهواء", "انسداد وارتفاع استهلاك الوقود", "بسيط", "فحص فقط", "failure"],
-  ["منظومة التبريد", "ارتفاع حرارة المحرك", "شديد", "فحص فقط", "success"],
-  ["ثرموستات", "تعليق وارتفاع حرارة", "متوسط", "فحص فقط", "success"],
-  ["سير الملحقات", "صفير واهتزاز", "بسيط", "فحص فقط", "success"],
-  ["بطارية التشغيل", "ضعف التشغيل صباحاً", "متوسط", "فحص فقط", "success"],
-  ["مضخة الماء", "تسريب سائل تبريد", "شديد", "فحص فقط", "failure"],
-  ["زيت المحرك", "انخفاض مستوى الزيت", "متوسط", "فحص فقط", "failure"]
+
+ const parts=[
+  ['فلتر الوقود','انسداد وضعف تدفق الوقود','متوسط'],['بخاخات الوقود','رش غير منتظم وضعف عزم','متوسط'],
+  ['مضخة الوقود','ضعف ضغط الوقود','شديد'],['فلتر الهواء','انسداد وارتفاع استهلاك الوقود','بسيط'],
+  ['منظومة التبريد','ارتفاع حرارة المحرك','شديد'],['ثرموستات','تعليق وارتفاع حرارة','متوسط'],
+  ['سير الملحقات','صفير واهتزاز','بسيط'],['بطارية التشغيل','ضعف التشغيل صباحاً','متوسط'],
+  ['مضخة الماء','تسريب سائل تبريد','شديد'],['زيت المحرك','انخفاض مستوى الزيت','متوسط'],
+  ['مضخة الحقن','تذبذب ضغط الوقود','شديد'],['فلتر الزيت','انسداد وارتفاع ضغط الزيت','متوسط'],
+  ['خرطوم التبريد','تشقق وتسريب','متوسط'],['مروحة التبريد','ضعف التهوية وارتفاع الحرارة','شديد'],
+  ['حساس حرارة المحرك','قراءة غير مستقرة','بسيط'],['بادئ التشغيل','بطء دوران المحرك','متوسط']
  ];
- rows.forEach((r,i)=>{
-  const [part,fault,severity,action,outcome]=r;
-  const km=51000+i*550;
-  db.records.push({id:'NTEST'+(i+1),wheelId:n.id,date:new Date(Date.UTC(2026,8,1+i)).toISOString().slice(0,10),km,part,number:'NIS-'+String(i+1).padStart(3,'0'),fault,severity,driverBehavior:'متوسط',action,cost:outcome==='success'?250:180,notes:'بيانات تجريبية لاختبار التحليل فقط',outcome,followDays:30,partAgeKm:1000+i*300,partFailures:rows.slice(0,i).filter(x=>x[0]===part).length,kmSinceService:1000+i*300,hours:2800,result:outcome==='success'?'ناجح، لم يعد العطل':'فشل، عاد العطل',demoVirtual:true});
+ const drivers=['أحمد','علي','حسين','سجاد','مصطفى','محمد','كرار','سائق احتياط'];
+ const behaviors=['هادئ','متوسط','قيادة قاسية','سرعة عالية','تسارع وكبح متكرر','تشغيل طويل','متنوع'];
+ const models=['شاحنة ديزل A','مركبة ديزل B','مركبة ديزل C','مولد ديزل D'];
+ let seed=20261008;
+ const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+ const pick=a=>a[Math.floor(rnd()*a.length)];
+ const int=(a,b)=>Math.floor(rnd()*(b-a+1))+a;
+ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
+ const actions=shuffle([...Array(50).fill('إصلاح'),...Array(50).fill('استبدال'),...Array(20).fill('فحص فقط')]);
+
+ let km=48000;
+ for(let i=0;i<actions.length;i++){
+  const action=actions[i], spec=pick(parts), part=spec[0], fault=spec[1], severity=spec[2];
+  const driver=pick(drivers), driverBehavior=pick(behaviors), model=pick(models);
+  km+=int(180,1450);
+  const partAgeKm=int(1200,36000), partAgeDays=int(20,900);
+  const partFailures=Math.min(6,Math.floor(rnd()*rnd()*7));
+  const partRepairs=int(0,Math.min(4,partFailures+1));
+  const partReplacements=int(0,Math.min(3,partFailures));
+  const kmSinceService=int(200,12000), hours=int(300,4200);
+  let pSuccess=action==='إصلاح'?0.68:action==='استبدال'?0.84:0.73;
+  pSuccess+=severity==='بسيط'?0.08:severity==='شديد'?-0.12:0;
+  pSuccess-=Math.min(0.18,partFailures*0.025);
+  if(driverBehavior==='قيادة قاسية'||driverBehavior==='تسارع وكبح متكرر')pSuccess-=0.05;
+  if(action==='استبدال'&&partFailures>=2)pSuccess+=0.05;
+  if(action==='إصلاح'&&partFailures>=3)pSuccess-=0.05;
+  pSuccess=Math.max(0.15,Math.min(0.95,pSuccess));
+  const outcome=rnd()<pSuccess?'success':'failure';
+  const cost=action==='إصلاح'?int(80,650):action==='استبدال'?int(350,2400):int(20,180);
+  const date=new Date(Date.UTC(2026,8,1+i)).toISOString().slice(0,10);
+
+  db.records.push({
+   id:'NTEST'+(i+1),wheelId:n.id,date,km,part,number:'NIS-'+String(i+1).padStart(3,'0'),
+   fault,severity,driverName:driver,driverBehavior,action,cost,
+   notes:'بيانات اصطناعية متنوعة لاختبار النموذج فقط',outcome,followDays:int(14,60),
+   maintType:action==='فحص فقط'?'فحص':(rnd()<0.35?'دورية':'إصلاح عطل'),symptoms:fault,
+   reason:rnd()<0.5?'ظهور عطل':pick(['ضعف أداء','ارتفاع حرارة','تسريب','تكرار العطل','ملاحظة السائق']),
+   partAgeKm,partAgeDays,partFailures,partRepairs,partReplacements,
+   lastServiceDate:new Date(Date.UTC(2026,7,1+Math.floor(rnd()*25))).toISOString().slice(0,10),
+   kmSinceService,hours,kmToOutcome:int(80,4200),nextFault:'',nextPart:'',
+   vehicleType:'ديزل',vehicleModel:model,engine:'Diesel',
+   result:outcome==='success'?'ناجح، لم يعد العطل':'فشل، عاد العطل',demoVirtual:true
+  });
   let po=db.parts.find(x=>x.wheelId===n.id&&x.name===part);
-  if(!po){po={id:'NPART-'+i,wheelId:n.id,name:part,number:'NIS-P-'+String(i+1).padStart(3,'0'),install:'2026-09-01',failures:0,status:'مركب'};db.parts.push(po)}
+  if(!po){po={id:'NPART-'+i,wheelId:n.id,name:part,number:'NIS-P-'+String(i+1).padStart(3,'0'),install:date,failures:0,status:'مركب'};db.parts.push(po);}
   po.failures++;
- });
- selected=n.id;
- openWheel(n.id);
- showDemoModal();
+ }
+ n.km=km; n.hours=Math.max(...db.records.map(r=>Number(r.hours)||0));
+ selected=n.id; openWheel(n.id); showDemoModal();
 }
 
 // ===== تثبيت البرنامج كتطبيق PWA =====
