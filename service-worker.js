@@ -1,5 +1,9 @@
-const CACHE_NAME = 'maintenance-decision-v73';
-const ASSETS = ['./','./index.html','./manifest.webmanifest','./service-worker.js'];
-self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
-self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())));
-self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+const CACHE_NAME = 'maintenance-decision-v7-3-final';
+const APP_SHELL = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())); });
+self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
+self.addEventListener('fetch', event => {
+ if (event.request.method !== 'GET') return;
+ const url = new URL(event.request.url); if (url.origin !== self.location.origin) return;
+ event.respondWith(caches.match(event.request).then(cached => { if (cached) return cached; return fetch(event.request).then(response => { if (response && response.ok) { const copy=response.clone(); caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)); } return response; }).catch(() => { if(event.request.mode==='navigate') return caches.match('./index.html'); throw new Error('Offline resource unavailable'); }); }));
+});

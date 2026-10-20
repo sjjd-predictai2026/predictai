@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>نموذج لدعم قرار الصيانة</title>
+<title>نموذج لدعم قرار الصيانة V7.3 - تعديل جميع الحقول</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#eef2f5;color:#17202a;font-family:Tahoma,Arial,sans-serif}
@@ -162,7 +162,30 @@ html,body{max-width:100%;overflow-x:hidden !important;}
 @media(max-width:700px){
  .top{padding:14px 12px}.top h1{font-size:17px}.container{padding:14px 10px}.wheel-select-box{margin-top:18px;padding:18px}.wheels{grid-template-columns:1fr}.nav{overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch}.nav button{flex:0 0 auto!important}.box{overflow:hidden}
 }
-@media print{body{background:#fff!important}.top,#picker,.nav,.btn{display:none!important}.screen,.section{display:block!important}.box{box-shadow:none!important}.table-wrap{overflow:visible!important}table{display:table!important;white-space:normal!important}}</style>
+@media print{body{background:#fff!important}.top,#picker,.nav,.btn{display:none!important}.screen,.section{display:block!important}.box{box-shadow:none!important}.table-wrap{overflow:visible!important}table{display:table!important;white-space:normal!important}}
+.edit-record-btn{background:#e5eef8;color:#173e62;border:1px solid #c6d9eb;border-radius:8px;padding:7px 11px;cursor:pointer;font-weight:700;white-space:nowrap}
+.edit-record-btn:hover{background:#d4e5f6}
+.editor-backdrop{position:fixed;inset:0;background:rgba(12,28,43,.62);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px}
+.editor-dialog{background:#fff;width:min(980px,100%);max-height:92vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 18px 70px #0004}
+.editor-dialog h2{margin:0 0 8px;color:#173e62}.editor-dialog .editor-sub{color:#64748b;margin:0 0 18px}
+.editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.editor-grid label{display:block;font-weight:700;font-size:13px;color:#334155;margin-bottom:5px}
+.editor-grid input,.editor-grid select,.editor-grid textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#17202a}
+.editor-grid textarea{min-height:75px;resize:vertical}.editor-actions{display:flex;gap:10px;justify-content:flex-start;margin-top:18px;flex-wrap:wrap}.editor-actions button{border:0;border-radius:9px;padding:11px 18px;cursor:pointer;font-weight:700}.editor-save{background:#16794b;color:#fff}.editor-cancel{background:#e8edf2;color:#243746}
+@media(max-width:620px){.editor-grid{grid-template-columns:1fr}.editor-dialog{padding:16px}.table-wrap{overflow-x:auto}}
+
+
+/* Smart wheel search */
+.wheel-search{max-width:650px;margin:18px auto 12px;text-align:right}
+.wheel-search input{width:100%;box-sizing:border-box;padding:14px 15px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;background:#fff}
+.wheel-search-hint{font-size:13px;color:#64748b;margin:7px 2px}
+.wheel-search-results{display:grid;gap:9px;margin-top:10px}
+.wheel-result{display:block;width:100%;text-align:right;border:1px solid #dbe2e8;background:#fff;border-radius:13px;padding:13px 15px;cursor:pointer;color:inherit;box-shadow:0 2px 7px #00000008}
+.wheel-result:hover,.wheel-result:focus{border-color:#16845b;outline:2px solid #16845b22}
+.wheel-result strong{display:block;font-size:16px;margin-bottom:4px}
+.wheel-result small{display:block;color:#64748b;line-height:1.7}
+.wheel-search-empty{padding:13px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:14px}
+</style>
 
 <style id="light-modern-ui">
 :root{
@@ -524,6 +547,23 @@ body{
 }
 </style>
 
+<style>
+.app-notice{position:fixed;z-index:99999;right:50%;transform:translateX(50%);bottom:22px;max-width:min(92vw,560px);padding:15px 22px;border-radius:14px;box-shadow:0 10px 35px rgba(0,0,0,.2);font:600 15px/1.7 Tahoma,Arial;text-align:center;color:#fff;display:none}
+.app-notice.success{background:#16794b}.app-notice.error{background:#b42318}.app-notice.warning{background:#8a5700}
+</style>
+<style>
+
+/* Custom wheel chooser. Keeps the original wheelSelect element and all existing data logic intact. */
+.wheel-chooser-trigger{width:100%;min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border:2px solid #cbd8e7;border-radius:20px;background:#f8fbff;color:#172b45;font-size:18px;font-weight:700;text-align:right;cursor:pointer;box-shadow:0 3px 12px rgba(20,55,90,.06)}
+.wheel-chooser-trigger:focus-visible{outline:3px solid #8ec5ff;outline-offset:2px}.wheel-chooser-chevron{font-size:26px;color:#1769d2;flex-shrink:0}
+#wheelChooserModal{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,20,36,.62);backdrop-filter:blur(3px)}
+#wheelChooserModal.open{display:flex}.wheel-chooser-dialog{width:min(760px,100%);max-height:min(88dvh,900px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.7);border-radius:28px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+.wheel-chooser-head{position:relative;padding:22px 24px 20px;background:linear-gradient(125deg,#0869ed,#12477f);color:#fff;text-align:center}.wheel-chooser-head h2{margin:0 42px 7px;font-size:25px}.wheel-chooser-head p{margin:0;font-size:15px;line-height:1.7;color:#e5f1ff}.wheel-chooser-close{position:absolute;left:16px;top:16px;width:42px;height:42px;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:26px;cursor:pointer}
+.wheel-chooser-body{padding:16px;overflow:auto;overscroll-behavior:contain}.wheel-chooser-search{width:100%;min-height:56px;padding:13px 16px;border:2px solid #d5dfeb;border-radius:17px;background:#f8fbff;color:#14283a;font-size:16px;outline:none}.wheel-chooser-search:focus{border-color:#1674e8;box-shadow:0 0 0 3px rgba(22,116,232,.12)}
+.wheel-chooser-list{display:grid;gap:10px;margin-top:14px}.wheel-chooser-item{display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;gap:12px;width:100%;padding:15px;border:1px solid #dce6f1;border-radius:18px;background:#f8fbff;color:#17202a;text-align:right;cursor:pointer}.wheel-chooser-item:active,.wheel-chooser-item.selected{border-color:#76b7ff;background:#e8f4ff}.wheel-chooser-item strong{display:block;margin-bottom:8px;font-size:18px}.wheel-chooser-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.wheel-chooser-meta span{font-size:13px;line-height:1.55;color:#42536a;overflow-wrap:anywhere}.wheel-chooser-meta b{color:#1769b9}.wheel-chooser-arrow{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#dceeff;color:#1268d7;font-size:25px}.wheel-chooser-empty{padding:24px 10px;text-align:center;color:#65758a;line-height:1.8}.wheel-chooser-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 16px;border-top:1px solid #e5eaf0;background:#fff}.wheel-chooser-actions button{min-height:56px;border:0;border-radius:16px;padding:12px;font:700 16px Tahoma,Arial;cursor:pointer}.wheel-chooser-confirm{background:#0969e8;color:#fff}.wheel-chooser-add{background:#eef1f5;color:#29384b}
+@media(max-width:520px){#wheelChooserModal{padding:8px}.wheel-chooser-dialog{max-height:91dvh;border-radius:24px}.wheel-chooser-head{padding:20px 14px 16px}.wheel-chooser-head h2{font-size:22px}.wheel-chooser-body{padding:12px}.wheel-chooser-item{padding:12px;grid-template-columns:minmax(0,1fr) 32px}.wheel-chooser-item strong{font-size:17px}.wheel-chooser-meta{grid-template-columns:1fr 1fr}.wheel-chooser-meta span{font-size:12px}.wheel-chooser-arrow{width:30px;height:30px}.wheel-chooser-actions{padding:12px;gap:8px}.wheel-chooser-actions button{font-size:14px;min-height:52px}}
+
+</style>
 </head>
 <body>
 <header class="top"><h1>نموذج لدعم قرار الصيانة</h1><small>قاعدة تاريخية قابلة للتعلم</small></header>
@@ -536,9 +576,18 @@ body{
 <h2>إدارة العجلات</h2>
 <div class="muted" style="margin-top:6px">اختر عجلة لعرض بياناتها وتحليل سجل الصيانة</div>
 </div>
+<div class="wheel-search">
+<label for="wheelSearchInput">بحث ذكي عن العجلة</label>
+<input id="wheelSearchInput" type="search" placeholder="اكتب جزءاً من اسم العجلة أو رقمها أو الموديل..." autocomplete="off" oninput="searchWheels()">
+<div class="wheel-search-hint">البحث يقبل جزءاً من الاسم أو رقم العجلة أو النوع أو الموديل. إذا تكررت الأسماء، اختر حسب رقم العجلة.</div>
+<div id="wheelSearchResults" class="wheel-search-results" aria-live="polite"></div>
+</div>
 <div class="wheel-select-box">
 <label for="wheelSelect">اسم العجلة</label>
-<select id="wheelSelect" onchange="previewWheel()">
+<button type="button" id="openWheelChooser" class="wheel-chooser-trigger" onclick="openWheelChooser()" aria-haspopup="dialog" aria-controls="wheelChooserModal">
+  <span id="selectedWheelLabel">اختر العجلة...</span><span class="wheel-chooser-chevron" aria-hidden="true">⌄</span>
+</button>
+<select id="wheelSelect" onchange="previewWheel()" aria-hidden="true" tabindex="-1" style="display:none">
 <option value="">اختر العجلة...</option>
 </select>
 <div id="wheelPreview" class="wheel-preview muted">لم يتم اختيار عجلة</div>
@@ -623,9 +672,24 @@ const logs=()=>db.records.filter(x=>x.wheelId===selected);
 const wheelParts=()=>db.parts.filter(x=>x.wheelId===selected);
 
 function save(){
- if(demoMode) return;
+ if(demoMode) throw new Error('لا يمكن حفظ البيانات أثناء الاختبار التجريبي.');
  db.wheels.forEach(w=>{w.wheelNumber=w.wheelNumber||w.id;w.driverBehavior=w.driverBehavior||'غير مسجل';});
- localStorage.setItem(KEY,JSON.stringify(db));
+ try {
+  localStorage.setItem(KEY,JSON.stringify(db));
+  // تأكيد أن البيانات كُتبت ويمكن قراءتها من التخزين المحلي.
+  const check=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(!check || !Array.isArray(check.records) || !Array.isArray(check.wheels)) throw new Error('تعذر التحقق من البيانات المحفوظة.');
+  return true;
+ } catch(err) {
+  console.error('Save failed:',err);
+  throw new Error('تعذر حفظ البيانات على هذا الجهاز. تأكد من توفر مساحة التخزين وأن الصفحة تعمل ضمن متصفح يسمح بالتخزين المحلي.');
+ }
+}
+function showAppNotice(message,type='success'){
+ let el=document.getElementById('appNotice');
+ if(!el){el=document.createElement('div');el.id='appNotice';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.appendChild(el);}
+ el.className='app-notice '+type;el.textContent=message;el.style.display='block';
+ clearTimeout(window.__appNoticeTimer);window.__appNoticeTimer=setTimeout(()=>{el.style.display='none';},4200);
 }
 function exportProductionData(){
  if(demoMode){ alert('اخرج من الاختبار التجريبي أولاً ثم صدّر بيانات العجلات الأصلية.'); return; }
@@ -681,15 +745,41 @@ function renderPicker(){
  const sel=document.getElementById('wheelSelect');
  if(!sel)return;
  const current=sel.value;
- sel.innerHTML='<option value="">اختر العجلة...</option>'+db.wheels.filter(w=>!w.hiddenDemo).map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
- if(db.wheels.some(w=>w.id===current))sel.value=current;
+ const wheels=db.wheels.filter(w=>!w.hiddenDemo);
+ sel.innerHTML='<option value="">اختر العجلة...</option>'+wheels.map(w=>`<option value="${esc(w.id)}">${esc(w.name)} — رقم ${esc(w.wheelNumber||w.id)}${w.model?' — '+esc(w.model):''}</option>`).join('');
+ if(wheels.some(w=>String(w.id)===String(current)))sel.value=current;
+ const chosen=wheels.find(w=>String(w.id)===String(sel.value));
+ const label=document.getElementById('selectedWheelLabel');
+ if(label)label.textContent=chosen?`${chosen.name||'عجلة بدون اسم'} — رقم ${chosen.wheelNumber||chosen.id}${chosen.model?' — '+chosen.model:''}`:'اختر العجلة...';
  previewWheel();
+ searchWheels();
+}
+function searchWheels(){
+ const input=document.getElementById('wheelSearchInput');
+ const box=document.getElementById('wheelSearchResults');
+ if(!box)return;
+ const q=String(input?.value||'').trim().toLocaleLowerCase();
+ const wheels=db.wheels.filter(w=>!w.hiddenDemo);
+ const searchable=w=>[w.name,w.wheelNumber,w.id,w.type,w.model,w.engine,w.driverName,w.status,w.chassis,w.chassisNumber,w.vin]
+   .filter(v=>v!==undefined&&v!==null).join(' ').toLocaleLowerCase();
+ const matches=q?wheels.filter(w=>searchable(w).includes(q)):[];
+ if(!q){box.innerHTML='';return;}
+ if(!matches.length){box.innerHTML='<div class="wheel-search-empty">ما لكيت عجلة تطابق البحث. جرّب جزءاً آخر من الاسم أو رقم العجلة.</div>';return;}
+ box.innerHTML=matches.slice(0,50).map(w=>`<button type="button" class="wheel-result" onclick="chooseSearchWheel(decodeURIComponent('${encodeURIComponent(String(w.id))}'))"><strong>${esc(w.name||'عجلة بدون اسم')}</strong><small>رقم العجلة: ${esc(w.wheelNumber||w.id)}${w.type?' | النوع: '+esc(w.type):''}${w.model?' | الموديل: '+esc(w.model):''}${w.engine?' | المحرك: '+esc(w.engine):''}</small></button>`).join('')+(matches.length>50?'<div class="muted">تظهر أول 50 نتيجة. ضيّق البحث لتحديد العجلة.</div>':'');
+}
+function chooseSearchWheel(id){
+ const sel=document.getElementById('wheelSelect');
+ if(sel)sel.value=String(id);
+ previewWheel();
+ openWheel(id);
 }
 function previewWheel(){
  const id=document.getElementById('wheelSelect')?.value;
  const box=document.getElementById('wheelPreview');
  if(!box)return;
  const w=db.wheels.find(x=>x.id===id);
+ const label=document.getElementById('selectedWheelLabel');
+ if(label)label.textContent=w?`${w.name||'عجلة بدون اسم'} — رقم ${w.wheelNumber||w.id}${w.model?' — '+w.model:''}`:'اختر العجلة...';
  box.innerHTML=w?`<b>${esc(w.name)}</b><br>رقم العجلة: ${esc(w.wheelNumber||w.id)}<br>سلوك السائق: ${esc(w.driverBehavior||'غير مسجل')}<br>${esc(w.type)} ${esc(w.model)} | المحرك: ${esc(w.engine)} | الكيلومترات: ${esc(w.km)} | الحالة: ${esc(w.status)}`:'لم يتم اختيار عجلة';
 }
 function openSelectedWheel(){
@@ -710,6 +800,8 @@ function goHome(){
  renderPicker();
 }
 function nav(id){
+ if(id==='faults')renderFaultHistory();
+ if(id==='maintenance')renderMaintenanceHistory();
  if(id==='mostFailed')renderMostFailedPartsSection();
  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
  document.getElementById(id).classList.add('active');
@@ -722,7 +814,7 @@ function renderWheel(){
  document.getElementById('wheelHeader').innerHTML=`
  <div class="hero-line">
   <div><h2>${esc(w.name)}</h2><div class="muted">رقم العجلة: ${esc(w.wheelNumber||w.id)} | ${esc(w.type)} ${esc(w.model)} | ${esc(w.id)}</div><div class="muted" style="margin-top:8px">سلوك السائق العام: ${esc(w.driverBehavior||'غير مسجل')}</div></div>
-  <span class="status">${esc(w.status)}</span>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="edit-record-btn" onclick="openWheelEditor()">✏️ تعديل بيانات العجلة</button><span class="status">${esc(w.status)}</span></div>
  </div>`;
  document.getElementById('nav').innerHTML=[
   ['dashboard','الرئيسية'],['addRecord','🛠️ صيانة جديدة'],['faults','سجل الأعطال'],
@@ -855,7 +947,9 @@ function toggleAddWheel(){
 // التوافق مع النسخ القديمة
 function addWheel(){ document.getElementById('newWheelName')?.focus(); }
 function addRecord(){
- const w=wheel(), part=document.getElementById('rpart').value.trim();if(!part)return alert('أدخل اسم الجزء');
+ const w=wheel();
+ if(!selected || !w){showAppNotice('تعذر الحفظ: اختر عجلة صحيحة أولاً.','error');return;}
+ const part=document.getElementById('rpart')?.value.trim()||'';if(!part)return alert('أدخل اسم الجزء');
  const date=document.getElementById('rdate').value,km=Number(document.getElementById('rkm').value)||w.km;
  const previousKms=db.records.filter(r=>r.wheelId===selected).map(r=>Number(r.km)||0).filter(v=>v>0);
  const previousKm=Math.max(0,w.km||0,...previousKms);
@@ -887,13 +981,23 @@ result:document.getElementById('routcome').value==='success'?'ناجح':document
  let p=db.parts.find(x=>x.wheelId===selected&&x.name===part&&(!document.getElementById('rnumber').value||x.number===document.getElementById('rnumber').value));
  if(!p){p={id:'P'+Date.now(),wheelId:selected,name:part,number:document.getElementById('rnumber').value,install:date,failures:0,status:'مركب'};db.parts.push(p)}
  if(document.getElementById('rfault').value)p.failures++;
- save();nav('maintenance');
+ try {
+  save();
+  // إعادة بناء الشاشات من قاعدة البيانات المحفوظة لتحديث سجل الأعطال والصيانة فوراً.
+  renderWheel();
+  nav('maintenance');
+  showAppNotice('تم حفظ سجل الصيانة بنجاح، وتم تحديث سجل الصيانة والأعطال.','success');
+ } catch(err) {
+  console.error(err);
+  // لا نظهر رسالة نجاح عند فشل التخزين.
+  showAppNotice(err.message||'فشل حفظ سجل الصيانة.','error');
+ }
 }
 function openPart(id){
  const p=db.parts.find(x=>x.id===id), w=wheel(), ls=logs().filter(x=>x.part===p.name);
  document.getElementById('partDetail').innerHTML=`
  <div class="box"><button class="btn light" onclick="nav('parts')">← أجزاء العجلة</button>
- <h2>${esc(p.name)}</h2>
+ <h2>${esc(p.name)}</h2><button class="edit-record-btn" onclick="openPartEditor('${p.id}')">✏️ تعديل بيانات الجزء</button>
  <div class="grid"><div><b>رقم الجزء</b><p>${esc(p.number||'-')}</p></div><div><b>تاريخ التركيب</b><p>${esc(p.install||'-')}</p></div><div><b>عدد الأعطال</b><p>${esc(p.failures)}</p></div><div><b>الحالة</b><p>${esc(p.status)}</p></div></div>
  <h3>تاريخ حياة الجزء</h3><div class="timeline">${ls.length?ls.map(x=>`<div class="event"><b>${esc(x.date)}</b><p>العطل: ${esc(x.fault||'لا يوجد')}</p><p>السائق وقت العملية: ${esc(x.driverName||'غير مسجل')}</p><p>الإجراء: ${esc(x.action)}</p><p>النتيجة: ${esc(x.result)}</p></div>`).join(''):''}</div></div>`;
  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById('partDetail').classList.add('active');
@@ -993,18 +1097,81 @@ function renderLearningPanel(){
  <div class="notice">كل سجل جديد بنتيجة فعلية يدخل قاعدة التعلم تلقائياً. النموذج لا يدّعي دقة علمية قبل توفر بيانات حقيقية كافية.</div></div>`;
 }
 
+const RECORD_EDIT_FIELDS=[
+ ['date','التاريخ','date'],['km','الكيلومترات','number'],['driverName','اسم السائق','text'],['driverBehavior','سلوك السائق','select:هادئ|متوسط|قاسٍ|متنوع|غير معروف'],
+ ['part','الجزء','text'],['number','رقم الجزء','text'],['fault','نوع العطل','text'],['severity','شدة العطل','select:بسيط|متوسط|شديد'],
+ ['maintType','نوع الصيانة','text'],['symptoms','الأعراض','textarea'],['reason','سبب العطل','textarea'],['action','الإجراء','select:إصلاح|استبدال|فحص فقط'],['cost','التكلفة','number'],['notes','ملاحظات','textarea'],
+ ['outcome','نتيجة المتابعة','select:pending|success|failure'],['followDays','مدة المتابعة بالأيام','number'],['partAgeKm','عمر الجزء بالكيلومترات','number'],['partAgeDays','عمر الجزء بالأيام','number'],['partFailures','عدد الأعطال السابقة','number'],['partRepairs','عدد الإصلاحات السابقة','number'],['partReplacements','عدد الاستبدالات السابقة','number'],['lastServiceDate','تاريخ آخر صيانة','date'],['kmSinceService','المسافة منذ آخر صيانة','number'],['hours','ساعات التشغيل','number'],['kmToOutcome','المسافة حتى نتيجة المتابعة','number'],['nextFault','العطل اللاحق','text'],['nextPart','الجزء اللاحق','text'],['result','وصف النتيجة','text']
+];
+function editorField(field,label,type,value){
+ const v=value==null?'':String(value);let input='';
+ if(type.startsWith('select:')){let opts=type.slice(7).split('|');if(field==='outcome')opts=['pending','success','failure'];input=`<select id="ed_${field}">${opts.map(o=>`<option value="${esc(o)}" ${v===o?'selected':''}>${esc(({pending:'بانتظار المتابعة',success:'ناجح',failure:'فشل، عاد العطل'})[o]||o)}</option>`).join('')}</select>`;}
+ else if(type==='textarea')input=`<textarea id="ed_${field}">${esc(v)}</textarea>`;
+ else input=`<input id="ed_${field}" type="${type}" value="${esc(v)}" ${type==='number'?'step="any"':''}>`;
+ return `<div><label for="ed_${field}">${esc(label)}</label>${input}</div>`;
+}
+
+const FIELD_LABELS={id:'المعرّف',wheelId:'معرّف العجلة',date:'التاريخ',km:'الكيلومترات',driverName:'اسم السائق',driverBehavior:'سلوك السائق',part:'الجزء',number:'رقم الجزء',fault:'نوع العطل',severity:'شدة العطل',maintType:'نوع الصيانة',symptoms:'الأعراض',reason:'سبب العطل',action:'الإجراء',cost:'التكلفة',notes:'ملاحظات',outcome:'نتيجة المتابعة',followDays:'مدة المتابعة بالأيام',partAgeKm:'عمر الجزء بالكيلومترات',partAgeDays:'عمر الجزء بالأيام',partFailures:'عدد الأعطال السابقة',partRepairs:'عدد الإصلاحات السابقة',partReplacements:'عدد الاستبدالات السابقة',lastServiceDate:'تاريخ آخر صيانة',kmSinceService:'المسافة منذ آخر صيانة',hours:'ساعات التشغيل',kmToOutcome:'المسافة حتى نتيجة المتابعة',nextFault:'العطل اللاحق',nextPart:'الجزء اللاحق',result:'وصف النتيجة',name:'الاسم',wheelNumber:'رقم العجلة',type:'نوع المركبة',model:'الموديل',engine:'نوع المحرك',status:'الحالة',install:'تاريخ التركيب',failures:'عدد الأعطال'};
+function dynamicType(key,value){
+ if(key==='date'||key==='lastServiceDate'||key==='install')return 'date';
+ if(typeof value==='number'||/^(km|hours|cost|failures|followDays|partAgeKm|partAgeDays|partFailures|partRepairs|partReplacements|kmSinceService|kmToOutcome)$/.test(key))return 'number';
+ if(key==='driverBehavior')return 'select:هادئ|متوسط|قاسٍ|متنوع|غير معروف|غير مسجل';
+ if(key==='engine')return 'select:ديزل|بنزين|هجين|كهربائي';
+ if(key==='status')return 'select:تعمل|متوقفة|تحت الصيانة|مركب|عاطل|تم إصلاحه|مستبدل';
+ if(key==='action')return 'select:إصلاح|استبدال|فحص فقط';
+ if(key==='severity')return 'select:بسيط|متوسط|شديد';
+ if(key==='outcome')return 'select:pending|success|failure';
+ if(/symptom|reason|note|description|comment|result/i.test(key)||String(value??'').length>100)return 'textarea';
+ return 'text';
+}
+function completeEditorFields(base,obj,excluded=[]){
+ const fields=base.map(x=>x.slice()); const seen=new Set(fields.map(x=>x[0]));
+ Object.keys(obj||{}).forEach(k=>{if(excluded.includes(k)||seen.has(k))return;fields.push([k,FIELD_LABELS[k]||k,dynamicType(k,obj[k])]);});
+ return fields;
+}
+function safeEditorValue(field,type,value){
+ if(type==='number')return value===''?0:Number(value);
+ return value;
+}
+function openRecordEditor(id){
+ const r=db.records.find(x=>String(x.id)===String(id));if(!r){showAppNotice('لم يتم العثور على السجل المطلوب تعديله.','error');return;}
+ closeDataEditor();const fields=completeEditorFields(RECORD_EDIT_FIELDS,r,['id','wheelId']);const m=document.createElement('div');m.id='dataEditorModal';m.className='editor-backdrop';
+ m.innerHTML=`<div class="editor-dialog" role="dialog" aria-modal="true"><h2>تعديل سجل الصيانة والعطل</h2><p class="editor-sub">جميع الحقول المسجلة متاحة للتعديل، بما فيها الحقول الإضافية الموجودة في هذا السجل.</p><div class="editor-grid">${fields.map(f=>editorField(f[0],f[1],f[2],r[f[0]])).join('')}</div><div class="editor-actions"><button class="editor-save" onclick="saveRecordEditor('${String(r.id).replace(/'/g,"\\'")}')">حفظ التعديلات</button><button class="editor-cancel" onclick="closeDataEditor()">إلغاء</button></div></div>`;
+ document.body.appendChild(m);m.dataset.fields=JSON.stringify(fields);m.addEventListener('click',e=>{if(e.target===m)closeDataEditor();});
+}
+function saveRecordEditor(id){
+ const r=db.records.find(x=>String(x.id)===String(id));if(!r)return;
+ const old=JSON.parse(JSON.stringify(r));
+ try{
+  const fields=JSON.parse(document.getElementById('dataEditorModal').dataset.fields);fields.forEach(f=>{const el=document.getElementById('ed_'+f[0]);if(el){let v=el.value;if(f[2]==='number')v=v===''?0:Number(v);r[f[0]]=v;}});
+  if(!String(r.part||'').trim())throw new Error('اسم الجزء مطلوب.');
+  if(!r.date)throw new Error('التاريخ مطلوب.');
+  r.part=String(r.part).trim();
+  r.result=r.result||(({success:'ناجح',failure:'عاد العطل',pending:'بانتظار المتابعة'})[r.outcome]||'بانتظار المتابعة');
+  save();closeDataEditor();renderWheel();nav('maintenance');showAppNotice('تم حفظ تعديلات السجل وتحديث السجلات.','success');
+ }catch(e){Object.assign(r,old);showAppNotice(e.message||'تعذر حفظ التعديلات.','error');}
+}
+function openWheelEditor(){
+ const w=wheel();if(!w)return;closeDataEditor();const base=[['name','اسم العجلة','text'],['wheelNumber','رقم العجلة','text'],['type','نوع المركبة','text'],['model','الموديل','text'],['engine','نوع المحرك','select:ديزل|بنزين|هجين|كهربائي'],['km','الكيلومترات الحالية','number'],['hours','ساعات التشغيل','number'],['status','حالة العجلة','select:تعمل|متوقفة|تحت الصيانة'],['driverBehavior','سلوك السائق العام','select:هادئ|متوسط|قاسٍ|متنوع|غير مسجل']];const fields=completeEditorFields(base,w,['id']);
+ const m=document.createElement('div');m.id='dataEditorModal';m.className='editor-backdrop';m.innerHTML=`<div class="editor-dialog" role="dialog" aria-modal="true"><h2>تعديل بيانات العجلة</h2><p class="editor-sub">تعديل بيانات العجلة لا يحذف سجلات الصيانة السابقة.</p><div class="editor-grid">${fields.map(f=>editorField(f[0],f[1],f[2],w[f[0]])).join('')}</div><div class="editor-actions"><button class="editor-save" onclick="saveWheelEditor()">حفظ التعديلات</button><button class="editor-cancel" onclick="closeDataEditor()">إلغاء</button></div></div>`;document.body.appendChild(m);m.dataset.fields=JSON.stringify(fields);
+}
+function saveWheelEditor(){const w=wheel();if(!w)return;const old=JSON.parse(JSON.stringify(w));try{const fields=JSON.parse(document.getElementById('dataEditorModal').dataset.fields);fields.forEach(f=>{const el=document.getElementById('ed_'+f[0]);if(el){w[f[0]]=f[2]==='number'?(el.value===''?0:Number(el.value)):el.value;}});if(!String(w.name||'').trim())throw new Error('اسم العجلة مطلوب.');save();closeDataEditor();renderPicker();renderWheel();nav('dashboard');showAppNotice('تم تحديث بيانات العجلة بنجاح.','success');}catch(e){Object.assign(w,old);showAppNotice(e.message||'تعذر حفظ بيانات العجلة.','error');}}
+function openPartEditor(id){const p=db.parts.find(x=>String(x.id)===String(id));if(!p)return;closeDataEditor();const base=[['name','اسم الجزء','text'],['number','رقم الجزء','text'],['install','تاريخ التركيب','date'],['failures','عدد الأعطال','number'],['status','حالة الجزء','select:مركب|عاطل|تم إصلاحه|مستبدل']];const fields=completeEditorFields(base,p,['id','wheelId']);const m=document.createElement('div');m.id='dataEditorModal';m.className='editor-backdrop';m.innerHTML=`<div class="editor-dialog" role="dialog" aria-modal="true"><h2>تعديل بيانات الجزء</h2><div class="editor-grid">${fields.map(f=>editorField(f[0],f[1],f[2],p[f[0]])).join('')}</div><div class="editor-actions"><button class="editor-save" onclick="savePartEditor('${String(p.id).replace(/'/g,"\\'")}')">حفظ التعديلات</button><button class="editor-cancel" onclick="closeDataEditor()">إلغاء</button></div></div>`;document.body.appendChild(m);m.dataset.fields=JSON.stringify(fields);}
+function savePartEditor(id){const p=db.parts.find(x=>String(x.id)===String(id));if(!p)return;const old=JSON.parse(JSON.stringify(p));try{const fields=JSON.parse(document.getElementById('dataEditorModal').dataset.fields);fields.forEach(f=>{const el=document.getElementById('ed_'+f[0]);if(el)p[f[0]]=f[2]==='number'?(el.value===''?0:Number(el.value)):el.value;});if(!String(p.name||'').trim())throw new Error('اسم الجزء مطلوب.');save();closeDataEditor();renderWheel();nav('parts');showAppNotice('تم تحديث بيانات الجزء بنجاح.','success');}catch(e){Object.assign(p,old);showAppNotice(e.message||'تعذر حفظ بيانات الجزء.','error');}}
+function closeDataEditor(){document.getElementById('dataEditorModal')?.remove();}
+
 function renderFaultHistory(){
  const box=document.getElementById('faultHistoryTable'); if(!box)return;
  const filter=document.getElementById('faultPartFilter')?.value||'';
  const rows=logs().filter(x=>x.fault&&(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
- box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>اسم السائق وقت العطل</th><th>الإجراء</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ العطل</th><th>الكيلومترات</th><th>الجزء العاطل</th><th>نوع العطل</th><th>الشدة</th><th>اسم السائق وقت العطل</th><th>الإجراء</th><th>تعديل</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.fault||'-')}</td><td>${esc(x.severity||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td><td><button class="edit-record-btn" onclick="openRecordEditor('${x.id}')">تعديل السجل</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد أعطال مسجلة لهذا الجزء.</div>';
 }
 
 function renderMaintenanceHistory(){
  const box=document.getElementById('maintenanceHistoryTable'); if(!box)return;
  const filter=document.getElementById('maintenancePartFilter')?.value||'';
  const rows=logs().filter(x=>(!filter||String(x.part||'')===filter)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
- box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>اسم السائق وقت الصيانة</th><th>الإجراء</th><th>النتيجة</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
+ box.innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>التسلسل</th><th>تاريخ الصيانة</th><th>الكيلومترات</th><th>الجزء</th><th>نوع الصيانة</th><th>اسم السائق وقت الصيانة</th><th>الإجراء</th><th>النتيجة</th><th>تعديل</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date||'-')}</td><td>${esc(x.km||'-')}</td><td>${esc(x.part||'-')}</td><td>${esc(x.maintType||'-')}</td><td>${esc(x.driverName||'غير مسجل')}</td><td>${esc(x.action||'-')}</td><td>${esc(x.result||'-')}</td><td><button class="edit-record-btn" onclick="openRecordEditor('${x.id}')">تعديل السجل</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">لا توجد عمليات صيانة مسجلة لهذا الجزء.</div>';
 }
 
 function renderMostFailedPartsSection(){
@@ -1278,7 +1445,7 @@ function nextFaultPredictionHTML(){
 function driverHistoryHTML(){
  const w=wheel(),map={};logs().forEach(r=>{const d=String(r.driverName||w.driverName||'غير مسجل').trim()||'غير مسجل';if(!map[d])map[d]={events:0,faults:0,success:0,failure:0};map[d].events++;if(r.fault)map[d].faults++;if(r.outcome==='success')map[d].success++;if(r.outcome==='failure')map[d].failure++;});
  const rows=Object.entries(map).sort((a,b)=>b[1].events-a[1].events);
- return rows.length?'<div class="table-wrap"><table><thead><tr><th>السائق</th><th>الأحداث</th><th>الأعطال</th><th>نسبة الأعطال</th><th>نجاح الصيانة</th><th>فشل الصيانة</th><th>معدل الفشل</th></tr></thead><tbody>'+rows.map(x=>{const v=x[1],completed=v.success+v.failure,faultRate=v.events?Math.round(v.faults/v.events*100):0,failRate=completed?Math.round(v.failure/completed*100):0,successRate=completed?Math.round(v.success/completed*100):null;return '<tr><td>'+esc(x[0])+'</td><td>'+v.events+'</td><td>'+v.faults+'</td><td>'+faultRate+'%</td><td>'+v.success+(successRate!==null?' ('+successRate+'%)':'')+'</td><td>'+v.failure+'</td><td>'+(completed?failRate+'%':'غير متاح')+'</td></tr>';}).join('')+'</tbody></table></div><p class="muted">نسبة الأعطال = الأعطال ÷ الأحداث. معدل الفشل = حالات الفشل ÷ نتائج المتابعة المكتملة (نجاح + فشل). هذه مؤشرات وصفية ولا تثبت أن السائق سبب العطل.</p>':'<div class="notice">لا توجد بيانات سائق كافية.</div>';
+ return rows.length?'<div class="table-wrap"><table><thead><tr><th>السائق</th><th>الأحداث</th><th>الأعطال</th><th>نسبة الأعطال</th><th>نجاح الصيانة</th><th>فشل الصيانة</th><th>معدل الفشل</th></tr></thead><tbody>'+rows.map(x=>{const v=x[1],faultRate=v.events?Math.round(v.faults/v.events*100):0,totalOut=v.success+v.failure,failRate=totalOut?Math.round(v.failure/totalOut*100):0;return '<tr><td>'+esc(x[0])+'</td><td>'+v.events+'</td><td>'+v.faults+'</td><td>'+faultRate+'%</td><td>'+v.success+'</td><td>'+v.failure+'</td><td>'+failRate+'%</td></tr>';}).join('')+'</tbody></table></div><p class="muted">نسبة الأعطال = الأعطال ÷ الأحداث. معدل الفشل = حالات الفشل ÷ نتائج الصيانة المكتملة. هذه المؤشرات وصفية ولا تثبت أن السائق سبب العطل.</p>':'<div class="notice">لا توجد بيانات سائق كافية.</div>';
 }
 function advancedAnalysis(){
  const a=repairReplacementSummary(),life=partLifeSummary(),h=wheelHealthScore(),er=evaluateAction('إصلاح'),ex=evaluateAction('استبدال');
@@ -1536,5 +1703,60 @@ async function installPWA(){
 
 renderPicker();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));}
+
+// Custom selector UI only. Existing wheel data, storage and open/delete handlers remain unchanged.
+let wheelChooserPendingId = null;
+function openWheelChooser(){
+ const modal=document.getElementById('wheelChooserModal');
+ const sel=document.getElementById('wheelSelect');
+ if(!modal||!sel)return;
+ wheelChooserPendingId=sel.value||null;
+ const search=document.getElementById('wheelChooserSearch');
+ if(search)search.value='';
+ renderWheelChooserList();
+ modal.classList.add('open');
+ document.body.style.overflow='hidden';
+ setTimeout(()=>search?.focus(),60);
+}
+function closeWheelChooser(){
+ const modal=document.getElementById('wheelChooserModal');
+ if(modal)modal.classList.remove('open');
+ document.body.style.overflow='';
+}
+function renderWheelChooserList(){
+ const box=document.getElementById('wheelChooserList');
+ const q=String(document.getElementById('wheelChooserSearch')?.value||'').trim().toLocaleLowerCase();
+ if(!box)return;
+ const wheels=(db?.wheels||[]).filter(w=>!w.hiddenDemo);
+ const fields=w=>[w.name,w.wheelNumber,w.id,w.type,w.model,w.engine,w.chassis,w.chassisNumber,w.vin].filter(v=>v!==undefined&&v!==null).join(' ').toLocaleLowerCase();
+ const matches=q?wheels.filter(w=>fields(w).includes(q)):wheels;
+ if(!matches.length){box.innerHTML='<div class="wheel-chooser-empty">لا توجد عجلات مطابقة للبحث.<br>جرّب رقماً أو جزءاً آخر من الاسم.</div>';return;}
+ box.innerHTML=matches.slice(0,100).map(w=>{
+  const id=String(w.id); const selected=String(wheelChooserPendingId||'')===id;
+  const meta=[['رقم العجلة',w.wheelNumber||w.id],['الموديل',w.model||w.type||'غير مسجل'],['رقم الشاصي',w.chassis||w.chassisNumber||w.vin||'غير مسجل'],['نوع الوقود',w.engine||'غير مسجل']];
+  return `<button type="button" class="wheel-chooser-item${selected?' selected':''}" aria-pressed="${selected}" onclick="setWheelChooserPending(decodeURIComponent('${encodeURIComponent(id)}'))"><span><strong>${esc(w.name||'عجلة بدون اسم')}</strong><span class="wheel-chooser-meta">${meta.map(([k,v])=>`<span><b>${k}:</b> ${esc(v)}</span>`).join('')}</span></span><span class="wheel-chooser-arrow" aria-hidden="true">›</span></button>`;
+ }).join('')+(matches.length>100?'<div class="wheel-chooser-empty">تظهر أول 100 نتيجة. اكتب تفاصيل أكثر لتضييق البحث.</div>':'');
+}
+function setWheelChooserPending(id){wheelChooserPendingId=String(id);renderWheelChooserList();}
+function confirmWheelChooserSelection(){
+ const sel=document.getElementById('wheelSelect');
+ if(!wheelChooserPendingId){alert('اختر عجلة من القائمة أولاً.');return;}
+ const exists=(db?.wheels||[]).some(w=>!w.hiddenDemo&&String(w.id)===String(wheelChooserPendingId));
+ if(!exists){alert('تعذر العثور على العجلة. حدّث القائمة ثم حاول مجدداً.');return;}
+ sel.value=String(wheelChooserPendingId);
+ previewWheel();
+ closeWheelChooser();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWheelChooser();});
+
 </script>
+
+<div id="wheelChooserModal" role="presentation" onclick="if(event.target===this)closeWheelChooser()">
+ <section class="wheel-chooser-dialog" role="dialog" aria-modal="true" aria-labelledby="wheelChooserTitle">
+  <header class="wheel-chooser-head"><button type="button" class="wheel-chooser-close" aria-label="إغلاق" onclick="closeWheelChooser()">×</button><h2 id="wheelChooserTitle">اختيار العجلة</h2><p>اختر من القائمة أو ابحث بالاسم أو الرقم أو الموديل</p></header>
+  <div class="wheel-chooser-body"><input id="wheelChooserSearch" class="wheel-chooser-search" type="search" placeholder="ابحث باسم العجلة أو رقمها أو الموديل أو الشاصي..." autocomplete="off" oninput="renderWheelChooserList()"><div id="wheelChooserList" class="wheel-chooser-list"></div></div>
+  <footer class="wheel-chooser-actions"><button type="button" class="wheel-chooser-add" onclick="closeWheelChooser();toggleAddWheel();document.getElementById('newWheelName')?.focus()">＋ إضافة عجلة جديدة</button><button type="button" class="wheel-chooser-confirm" onclick="confirmWheelChooserSelection()">اختيار العجلة ✓</button></footer>
+ </section>
+</div>
+
 </body></html>
