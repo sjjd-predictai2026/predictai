@@ -1,0 +1,28 @@
+{
+  "id": "./",
+  "name": "نموذج لدعم قرار الصيانة",
+  "short_name": "دعم الصيانة",
+  "description": "نموذج لدعم قرار الصيانة والتنبؤ بالأعطال",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef5fa",
+  "theme_color": "#12324a",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
